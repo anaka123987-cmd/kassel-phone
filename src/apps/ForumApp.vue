@@ -7,10 +7,13 @@ import KpIcon from '../components/KpIcon.vue';
 import { store, isPostLiked, toggleLikePost, persistContent, showToast } from '../store.js';
 import { refreshPhoneContent } from '../services/pipeline.js';
 import { isMultiApi } from '../store.js';
+import { callSecondApiForForumReply } from '../services/secondApi.js';
+import { mockGenerateForumReply, tavernAvailable } from '../services/tavern.js';
 
 const activeBoard = ref('全部');
 const openPostId = ref(null);
 const replyDraft = ref('');
+const waitingReply = ref(false);
 
 const boards = computed(() => ['全部', ...(store.content.forum?.boards || []).filter((b) => b !== '全部')]);
 
@@ -41,11 +44,17 @@ function like(post) {
   toggleLikePost(post);
 }
 
-function submitReply() {
+const canLiveReply = computed(() =>
+  store.settings.forumLiveReply && (store.settings.apiMode === 'multi') &&
+  (!!store.settings.secondApi.url && !!store.settings.secondApi.model || !tavernAvailable()),
+);
+
+async function submitReply() {
   const text = replyDraft.value.trim();
   if (!text || !openPost.value) return;
-  openPost.value.replies = openPost.value.replies || [];
-  openPost.value.replies.push({
+  const post = openPost.value;
+  post.replies = post.replies || [];
+  post.replies.push({
     author: store.personaName || '我',
     time: new Date().toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit' }),
     content: text,
@@ -53,6 +62,33 @@ function submitReply() {
   replyDraft.value = '';
   persistContent();
   showToast('回帖已发布 (仅本机记录)');
+
+  // 论坛回帖实时回复: 第二 API 生成其他用户的回应 (demo 模式走 mock)
+  if (canLiveReply.value && !waitingReply.value) {
+    waitingReply.value = true;
+    try {
+      const replies = tavernAvailable()
+        ? await callSecondApiForForumReply({
+            settings: store.settings,
+            post,
+            myReply: text,
+            log: (m) => log(`[论坛回复] ${m}`),
+          })
+        : await mockGenerateForumReply(text);
+      for (const r of replies) post.replies.push({ ...r, time: '刚刚', fresh: true });
+      persistContent();
+      showToast(`收到 ${replies.length} 条新回复`);
+    } catch (e) {
+      showToast(`实时回复失败: ${e?.message || e}`);
+    } finally {
+      waitingReply.value = false;
+    }
+  }
+}
+
+function log(m) {
+  // 轻量日志转发, 避免循环依赖 store
+  console.log(`[卡塞尔论坛] ${m}`);
 }
 
 async function refresh() {
@@ -96,10 +132,15 @@ async function refresh() {
       </div>
 
       <div class="kp-reply-box">
-        <input v-model="replyDraft" type="text" placeholder="友善回帖, 理性讨论…" @keydown.enter="submitReply" />
-        <button class="kp-btn" :disabled="!replyDraft.trim()" @click="submitReply">
-          <KpIcon i="send" />
-        </button>
+        <div v-if="waitingReply" class="kp-reply-waiting">
+          <KpIcon i="loader" :size="12" class="kp-spin" /> 有人正在回复…
+        </div>
+        <div class="kp-reply-input-row">
+          <input v-model="replyDraft" type="text" placeholder="友善回帖, 理性讨论…" @keydown.enter="submitReply" />
+          <button class="kp-btn" :disabled="!replyDraft.trim()" @click="submitReply">
+            <KpIcon i="send" />
+          </button>
+        </div>
       </div>
     </div>
   </template>

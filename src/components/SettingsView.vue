@@ -354,6 +354,26 @@ function reinstallInjection() {
           </button>
         </div>
       </div>
+
+      <div class="kp-set-section">
+        <div class="kp-set-title"><KpIcon i="filter" /> 生成范围</div>
+        <p class="kp-set-desc">控制每次刷新生成哪些板块 (关闭的板块不生成也不覆盖现有内容)。</p>
+        <div class="kp-gen-row">
+          <button class="kp-gen-item" :class="{ 'kp-on': S.generation.forum }" @click="S.generation.forum = !S.generation.forum">
+            <KpIcon i="forum" :size="15" />论坛
+          </button>
+          <button class="kp-gen-item" :class="{ 'kp-on': S.generation.messages }" @click="S.generation.messages = !S.generation.messages">
+            <KpIcon i="send" :size="15" />私信
+          </button>
+          <button class="kp-gen-item" :class="{ 'kp-on': S.generation.news }" @click="S.generation.news = !S.generation.news">
+            <KpIcon i="megaphone" :size="15" />资讯
+          </button>
+        </div>
+        <div class="kp-set-row" style="margin-top: 8px">
+          <span class="kp-set-label">回帖实时回复<small>论坛里回帖后, 第二 API 生成其他用户的回应</small></span>
+          <button class="kp-switch" :class="{ 'kp-on': S.forumLiveReply }" @click="S.forumLiveReply = !S.forumLiveReply"></button>
+        </div>
+      </div>
     </template>
 
     <!-- ============ 外观 ============ -->

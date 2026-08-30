@@ -38,9 +38,20 @@ export const DEFAULT_PHONE_PROMPT = `【任务】你是《龙族》世界观中�
 
 function buildUserPrompt({ settings, storyText, worldbookText }) {
   const tpl = (settings?.promptTemplate || '').trim() || DEFAULT_PHONE_PROMPT;
-  return tpl
+  let prompt = tpl
     .replaceAll('{{story}}', storyText || '（暂无剧情，请根据世界观资料生成学院日常内容。）')
     .replaceAll('{{worldbook}}', worldbookText || '（无）');
+  // 生成范围: 关闭的板块要求返回空数组
+  const gen = settings?.generation || { forum: true, messages: true, news: true };
+  if (!gen.forum || !gen.messages || !gen.news) {
+    const scope = [
+      `forum: ${gen.forum ? '生成' : '不需要, posts 返回空数组 []'}`,
+      `messages: ${gen.messages ? '生成' : '不需要, chats 返回空数组 []'}`,
+      `news: ${gen.news ? '生成' : '不需要, 返回空数组 []'}`,
+    ].join('; ');
+    prompt += `\n\n【本次生成范围】${scope}`;
+  }
+  return prompt;
 }
 
 function parsePhonePayload(text) {
@@ -115,3 +126,42 @@ export async function callSecondApiForPhoneContent({ settings, storyText, worldb
 }
 
 export { parsePhonePayload, buildUserPrompt };
+
+/**
+ * 论坛回帖实时回复: 轻量请求, 生成 1-3 条其他用户的回应
+ * @returns {Promise<Array<{author:string, content:string}>>}
+ */
+export async function callSecondApiForForumReply({ settings, post, myReply, log }) {
+  const cfg = settings.secondApi;
+  if (!cfg.url || !cfg.model) throw new Error('第二 API 未配置');
+  const prompt = `【任务】你是《龙族》世界观中卡塞尔学院论坛BBS的模拟系统。下面是一篇帖子与玩家刚发的回帖, 请生成 1-2 条其他用户的回应 (楼主或路人, 符合龙族角色性格与学院氛围, 每条不超过50字)。
+只输出: <forum_reply>[{"author":"用户名","content":"回应内容"}]</forum_reply>
+
+【帖子】《${post.title}》(${post.board}) 作者: ${post.author}
+正文: ${String(post.content || '').slice(0, 300)}
+近期回复: ${(post.replies || []).slice(-3).map((r) => `${r.author}:${r.content}`).join(' / ').slice(0, 200) || '(无)'}
+
+【玩家的回帖】${myReply}
+
+请立即输出 <forum_reply> 内容。`;
+
+  log(`[第二API] 论坛回帖回复请求 → ${cfg.model}`);
+  const result = await withTimeout(
+    window.generateRaw({
+      user_input: prompt,
+      custom_api: { apiurl: cfg.url, key: cfg.key || '', model: cfg.model, source: 'openai' },
+      ordered_prompts: ['user_input'],
+      max_chat_history: 0,
+    }),
+    20000,
+    '论坛回复',
+  );
+  const text = String(result);
+  const m = text.match(/<forum_reply>([\s\S]*?)<\/forum_reply>/i);
+  const arr = JSON.parse((m ? m[1] : text).replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim());
+  if (!Array.isArray(arr)) throw new Error('回复格式错误');
+  return arr
+    .filter((r) => r && r.content)
+    .slice(0, 3)
+    .map((r) => ({ author: String(r.author || '匿名学员'), content: String(r.content) }));
+}

@@ -20,8 +20,13 @@ export function buildDigest() {
   const parts = [];
   if (store.mvu?.datetime) parts.push(`时间:${store.mvu.datetime}`);
   if (store.mvu?.location) parts.push(`地点:${store.mvu.location}`);
-  const posts = (c.forum?.posts || []).slice(0, 3).map((p) => `《${p.title}》`).join('');
-  if (posts) parts.push(`论坛热帖:${posts}`);
+  const posts = c.forum?.posts || [];
+  const titles = posts.slice(0, 3).map((p) => `《${p.title}》`).join('');
+  if (titles) {
+    parts.push(`论坛热帖:${titles}`);
+    // 附第一帖内容预览, 让 AI 能在剧情中具体谈论论坛内容
+    if (posts[0]?.content) parts.push(`热帖摘要:「${String(posts[0].content).replace(/\s+/g, ' ').slice(0, 40)}」`);
+  }
   const unread = (c.messages?.chats || [])
     .filter((ch) => ch.unread)
     .slice(0, 4)

@@ -1482,3 +1482,88 @@
   gap: 2px;
   padding: 6px 0 5px;
 }
+
+/* ================ v1.3: 面板拖动 / 关闭按钮 / 生成范围 ================ */
+.kp-statusbar {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  border-bottom: 1px dashed rgba(201, 168, 106, 0.1);
+}
+.kp-statusbar:active {
+  cursor: grabbing;
+}
+.kp-statusbar button {
+  cursor: pointer;
+}
+.kp-minbtn {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--kp-text);
+  background: rgba(201, 168, 106, 0.1);
+  border: 1px solid rgba(201, 168, 106, 0.3);
+}
+.kp-minbtn:hover {
+  background: rgba(201, 168, 106, 0.22);
+  color: var(--kp-gold-bright);
+  box-shadow: 0 0 10px rgba(201, 168, 106, 0.3);
+}
+.kp-sb-spinning {
+  animation: kp-rotate 1.2s linear infinite;
+  color: var(--kp-gold-bright);
+}
+.kp-gen-row {
+  display: flex;
+  gap: 6px;
+}
+.kp-gen-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 11px;
+  color: var(--kp-text-faint);
+  transition: all 0.18s ease;
+}
+.kp-gen-item.kp-on {
+  color: var(--kp-gold-bright);
+  border-color: rgba(201, 168, 106, 0.4);
+  background: rgba(201, 168, 106, 0.08);
+}
+.kp-reply-waiting {
+  font-size: 11px;
+  color: var(--kp-ice-soft);
+  padding: 4px 4px 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kp-reply-input-row {
+  display: flex;
+  gap: 8px;
+}
+.kp-reply-input-row input {
+  flex: 1;
+  min-width: 0;
+}
+.kp-reply-input-row .kp-btn {
+  padding: 7px 12px;
+}
+.kp-spin {
+  animation: kp-rotate 1s linear infinite;
+  display: inline-block;
+}
+
+.kp-reply-box {
+  flex-direction: column;
+  gap: 4px;
+}

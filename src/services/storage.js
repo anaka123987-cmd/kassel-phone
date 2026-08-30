@@ -21,6 +21,10 @@ export const DEFAULT_SETTINGS = {
   fallbackMainApi: true,
   /** 论坛生成模式: 'replace' 全量替换 | 'append' 追加合并 */
   forumMode: 'replace',
+  /** 生成范围开关 (第二 API 生成哪些板块) */
+  generation: { forum: true, messages: true, news: true },
+  /** 论坛回帖实时回复 (第二 API 生成路人/楼主回应) */
+  forumLiveReply: true,
   /** 剧情同步 (手机 ↔ 对话) */
   sync: {
     /** 手机状态摘要 + 消息格式 常驻注入提示词 */

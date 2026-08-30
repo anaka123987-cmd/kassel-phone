@@ -8,7 +8,7 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import KpIcon from './KpIcon.vue';
 import { store, unreadTotal } from '../store.js';
-import { hostWindow } from '../env.js';
+import { hostWindow, hostDocument } from '../env.js';
 import { tavernAvailable } from '../services/tavern.js';
 import ForumApp from '../apps/ForumApp.vue';
 import MessageApp from '../apps/MessageApp.vue';
@@ -45,6 +45,16 @@ const panelStyle = computed(() => {
   const btnCx = store.fabPos.x + 32;
   const btnCy = store.fabPos.y + 32;
 
+  // 手动拖动过 → 使用自由位置
+  if (panelFree.value) {
+    return {
+      left: `${Math.round(panelFree.value.x)}px`,
+      top: `${Math.round(panelFree.value.y)}px`,
+      height: `${H}px`,
+      transformOrigin: '50% 50%',
+    };
+  }
+
   let x = btnCx - W / 2;
   let y = btnCy - H - 20;
   if (y < 8) y = btnCy + 20; // 上方放不下 → 展开到按钮下方
@@ -68,8 +78,67 @@ const clockText = computed(() => {
 
 const displayTime = computed(() => store.mvu?.datetime || clockText.value);
 
+/* ---------------- 面板拖动 (拖状态栏移动手机窗口) ---------------- */
+
+const panelFree = ref(null); // 手动拖动后的位置; null = 锚定悬浮按钮
+let dragCtx = null;
+
+function clampFree(x, y) {
+  void resizeTick.value;
+  const win = hostWindow();
+  const W = 320;
+  const H = panelH.value;
+  // 保持手机至少 60px 留在视口内
+  return {
+    x: Math.min(Math.max(-(W - 60), x), Math.max(0, win.innerWidth - 60)),
+    y: Math.min(Math.max(0, y), Math.max(0, win.innerHeight - 60)),
+  };
+}
+
+function onStatusbarDown(e) {
+  if (e.target.closest('button')) return; // 按在按钮上不拖动
+  if (e.button !== undefined && e.button !== 0) return;
+  const phone = hostDocument().querySelector('.kp-phone');
+  if (!phone) return;
+  const r = phone.getBoundingClientRect();
+  dragCtx = { startX: e.clientX, startY: e.clientY, origX: r.x, origY: r.y };
+  panelFree.value = { x: r.x, y: r.y };
+  const el = e.currentTarget;
+  try {
+    el.setPointerCapture(e.pointerId);
+  } catch (err) { /* noop */ }
+  el.addEventListener('pointermove', onStatusbarMove);
+  el.addEventListener('pointerup', onStatusbarUp);
+  el.addEventListener('pointercancel', onStatusbarUp);
+}
+
+function onStatusbarMove(e) {
+  if (!dragCtx) return;
+  panelFree.value = clampFree(
+    dragCtx.origX + (e.clientX - dragCtx.startX),
+    dragCtx.origY + (e.clientY - dragCtx.startY),
+  );
+  e.preventDefault();
+}
+
+function onStatusbarUp(e) {
+  dragCtx = null;
+  const el = e.currentTarget;
+  el.removeEventListener('pointermove', onStatusbarMove);
+  el.removeEventListener('pointerup', onStatusbarUp);
+  el.removeEventListener('pointercancel', onStatusbarUp);
+}
+
+function onKey(e) {
+  if (e.key === 'Escape' && store.expanded) store.expanded = false;
+}
+
 function onResize() {
   resizeTick.value += 1;
+  // 自由位置跟随视口重钳制
+  if (panelFree.value) {
+    panelFree.value = clampFree(panelFree.value.x, panelFree.value.y);
+  }
 }
 
 // 每次展开都强制按当前视口重算锚点 (视口可能在面板收起期间变化过)
@@ -82,6 +151,7 @@ watch(
 
 function minimize() {
   store.expanded = false;
+  panelFree.value = null; // 收起后下次展开重新锚定按钮
 }
 
 onMounted(() => {
@@ -89,6 +159,7 @@ onMounted(() => {
   const win = hostWindow();
   win.addEventListener('resize', onResize);
   win.visualViewport?.addEventListener?.('resize', onResize);
+  hostDocument().addEventListener('keydown', onKey);
 });
 
 onBeforeUnmount(() => {
@@ -96,21 +167,22 @@ onBeforeUnmount(() => {
   const win = hostWindow();
   win.removeEventListener('resize', onResize);
   win.visualViewport?.removeEventListener?.('resize', onResize);
+  hostDocument().removeEventListener('keydown', onKey);
 });
 </script>
 
 <template>
   <Transition enter-active-class="kp-phone-anim-in" leave-active-class="kp-phone-anim-out">
     <div v-if="store.expanded" class="kp-phone" :style="panelStyle">
-      <!-- 顶部状态栏 -->
-      <div class="kp-statusbar">
+      <!-- 顶部状态栏 (可按住拖动手机窗口) -->
+      <div class="kp-statusbar" title="按住拖动 · Esc 收起" @pointerdown="onStatusbarDown">
         <span class="kp-sb-time">{{ displayTime }}</span>
         <KpIcon v-if="store.mvu?.location" i="map-pin" class="kp-sb-loc" :title="store.mvu.location" />
         <span class="kp-sb-spacer"></span>
         <span class="kp-sb-right">
           <KpIcon :i="store.pipeline.running ? 'refresh' : 'wifi'" :class="{ 'kp-sb-spinning': store.pipeline.running }" />
           <span class="kp-sb-dot" :class="{ 'kp-offline': !tavernAvailable() }"></span>
-          <button class="kp-minbtn" title="最小化" @click="minimize">
+          <button class="kp-minbtn" title="收起 (Esc)" @click="minimize">
             <KpIcon i="minus" />
           </button>
         </span>

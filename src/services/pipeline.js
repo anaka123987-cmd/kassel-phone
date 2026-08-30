@@ -58,8 +58,9 @@ export function collectStoryText() {
 /** 合并第二 API 生成内容到 store.content */
 export function mergePhonePayload(payload) {
   const c = store.content;
+  const gen = store.settings.generation || { forum: true, messages: true, news: true };
 
-  if (payload?.forum?.posts?.length) {
+  if (gen.forum && payload?.forum?.posts?.length) {
     const existing = new Set(c.forum.posts.map((p) => `${p.author}|${p.title}`));
     const fresh = payload.forum.posts
       .filter((p) => p && p.title)
@@ -98,7 +99,7 @@ export function mergePhonePayload(payload) {
     }
   }
 
-  if (payload?.messages?.chats?.length) {
+  if (gen.messages && payload?.messages?.chats?.length) {
     for (const chat of payload.messages.chats) {
       if (!chat?.name) continue;
       const isGroup = !!chat.isGroup;
@@ -130,7 +131,7 @@ export function mergePhonePayload(payload) {
     }
   }
 
-  if (payload?.news?.length) {
+  if (gen.news && payload?.news?.length) {
     const existingTitles = new Set(c.news.map((n) => n.title));
     const fresh = payload.news
       .filter((n) => n && n.title && !existingTitles.has(n.title))

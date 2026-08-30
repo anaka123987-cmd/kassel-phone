@@ -131,6 +131,18 @@ export function getPersonaNameSafe() {
 }
 
 /* ================= mock 实现 (demo 模式) ================= */
+// mock: 论坛回帖实时回复
+export async function mockGenerateForumReply(myReply) {
+  await new Promise((r) => setTimeout(r, 900 + Math.random() * 700));
+  const pool = [
+    { author: '芬格尔', content: '楼上说得对，但食堂煎蛋确实好吃。' },
+    { author: '诺诺', content: '噗，这都被你发现了。' },
+    { author: '匿名学员', content: '蹲一个后续。' },
+  ];
+  const n = 1 + Math.floor(Math.random() * 2);
+  return pool.slice(0, n);
+}
+
 
 const MOCK_MESSAGES = [
   {
@@ -169,8 +181,7 @@ const MOCK_WORLDBOOKS = [
 ];
 
 let mockReplyCount = 0;
-export async function mockGenerateRaw() {
-  await new Promise((r) => setTimeout(r, 1200 + Math.random() * 800));
+export async function mockGenerateRaw() {  await new Promise((r) => setTimeout(r, 1200 + Math.random() * 800));
   mockReplyCount += 1;
   const hot = mockReplyCount % 2 === 1;
   return `<kassel_phone>
