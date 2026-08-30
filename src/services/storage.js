@@ -19,6 +19,26 @@ export const DEFAULT_SETTINGS = {
   },
   /** 失败时是否降级为酒馆主 API (不填 custom_api, 走当前源) */
   fallbackMainApi: true,
+  /** 论坛生成模式: 'replace' 全量替换 | 'append' 追加合并 */
+  forumMode: 'replace',
+  /** 剧情同步 (手机 ↔ 对话) */
+  sync: {
+    /** 手机状态摘要 + 消息格式 常驻注入提示词 */
+    injectEnabled: true,
+    /** 注入深度 */
+    injectDepth: 4,
+    /** 手机回复注入最新楼层 (下一次生成生效, once) */
+    replyInject: true,
+    /** 发送后自动触发 AI 回复 (/trigger) */
+    autoTrigger: false,
+  },
+  /** 外观 */
+  accent: 'bronze',
+  customCss: '',
+  /** 生成提示词模板 (空 = 使用内置默认模板) */
+  promptTemplate: '',
+  /** 世界书最大注入字符数 (0 = 不限) */
+  worldbookMaxChars: 2000,
   /** 楼层正文提取规则 */
   extraction: {
     /** 主提取标签, 如 content: 只提取 <content>...</content> 内的正文 */
@@ -35,6 +55,8 @@ export const DEFAULT_SETTINGS = {
     includeUser: false,
     /** 提取最近多少楼 */
     floors: 6,
+    /** 单楼提取字符上限 (0 = 不限) */
+    maxCharsPerFloor: 500,
   },
   /** 世界书条目选择: { 世界书名: [uid, ...] } */
   worldbookSelection: {},

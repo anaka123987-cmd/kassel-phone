@@ -1,11 +1,14 @@
 <script setup>
 /**
- * 私信 App: 角色会话列表 → 聊天视图
- * 发送 = triggerSlash('/setinput 文本') 填入酒馆输入框, 衔接 RP
+ * 私信 App: 角色会话/群聊列表 → 聊天视图
+ * 发送通道: 回复注入 (injectPrompts once, 注入最新楼层) 优先;
+ * 关闭回复注入时降级为 /setinput 填入酒馆输入框
  */
 import { ref, nextTick, computed } from 'vue';
+import KpIcon from '../components/KpIcon.vue';
 import { store, persistContent, showToast } from '../store.js';
 import { triggerSlashSafe, tavernAvailable } from '../services/tavern.js';
+import { sendPhoneReply } from '../services/injector.js';
 
 const openChatId = ref(null);
 const draft = ref('');
@@ -40,23 +43,26 @@ function scrollBottom() {
 
 async function send(text) {
   const content = (text ?? draft.value).trim();
-  if (!content) return;
+  if (!content || !openChat.value) return;
+  const chat = openChat.value;
+
+  let viaInject = false;
   if (!tavernAvailable()) {
-    showToast('演示模式: 已模拟填入输入框');
+    showToast('演示模式: 回复已记录 (酒馆内将注入对话)');
   } else {
-    await triggerSlashSafe(`/setinput ${content}`);
-    showToast('已填入酒馆输入框, 确认后发送');
+    viaInject = await sendPhoneReply({ name: chat.name, isGroup: chat.isGroup }, content);
+    showToast(viaInject ? '已回复, 将在下一轮对话中同步' : '已填入酒馆输入框, 确认后发送');
+    if (!viaInject) await triggerSlashSafe(`/setinput ${content}`);
   }
-  if (openChat.value) {
-    openChat.value.messages = openChat.value.messages || [];
-    openChat.value.messages.push({
-      from: 'me',
-      text: content,
-      time: new Date().toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit' }),
-    });
-    persistContent();
-    scrollBottom();
-  }
+
+  chat.messages = chat.messages || [];
+  chat.messages.push({
+    from: 'me',
+    text: content,
+    time: new Date().toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+  });
+  persistContent();
+  scrollBottom();
   draft.value = '';
 }
 </script>
@@ -65,7 +71,7 @@ async function send(text) {
   <!-- 聊天视图 -->
   <template v-if="openChat">
     <div class="kp-app-header">
-      <button class="kp-iconbtn" @click="back"><i class="fa-solid fa-arrow-left"></i></button>
+      <button class="kp-iconbtn" @click="back"><KpIcon i="arrow-left" /></button>
       <span class="kp-avatar" :style="{ background: hueColor(openChat.hue) }">{{ openChat.name[0] }}</span>
       <div>
         <div class="kp-app-title" style="font-size: 14px">{{ openChat.name }}</div>
@@ -79,13 +85,16 @@ async function send(text) {
         class="kp-bubble-row"
         :class="{ 'kp-me': m.from === 'me' }"
       >
-        <div class="kp-bubble" :class="{ 'kp-bubble-me': m.from === 'me' }">
-          {{ m.text }}
-          <small v-if="m.time">{{ m.time }}</small>
+        <div>
+          <div v-if="openChat.isGroup && m.from !== 'me' && m.speaker" class="kp-bubble-speaker">{{ m.speaker }}</div>
+          <div class="kp-bubble" :class="{ 'kp-bubble-me': m.from === 'me' }">
+            {{ m.text }}
+            <small v-if="m.time">{{ m.time }}</small>
+          </div>
         </div>
       </div>
       <div v-if="!(openChat.messages || []).length" class="kp-empty">
-        <i class="fa-regular fa-comment-dots"></i>
+        <KpIcon i="message-dots" />
         还没有消息
       </div>
     </div>
@@ -94,9 +103,9 @@ async function send(text) {
         <button v-for="q in openChat.quickReplies || []" :key="q" class="kp-chip" @click="send(q)">{{ q }}</button>
       </div>
       <div class="kp-reply-box">
-        <input v-model="draft" type="text" placeholder="输入消息, 将填入酒馆输入框…" @keydown.enter="send()" />
+        <input v-model="draft" type="text" placeholder="回消息, 将同步到下一轮对话…" @keydown.enter="send()" />
         <button class="kp-btn" :disabled="!draft.trim()" @click="send()">
-          <i class="fa-solid fa-paper-plane"></i>
+          <KpIcon i="send" />
         </button>
       </div>
     </div>
@@ -119,13 +128,13 @@ async function send(text) {
             <small>{{ chat.messages?.length ? chat.messages[chat.messages.length - 1].time : '' }}</small>
           </div>
           <div class="kp-chat-preview">
-            {{ chat.messages?.length ? chat.messages[chat.messages.length - 1].text : '(暂无消息)' }}
+            {{ chat.messages?.length ? (chat.isGroup && chat.messages[chat.messages.length - 1].speaker ? chat.messages[chat.messages.length - 1].speaker + ': ' : '') + chat.messages[chat.messages.length - 1].text : '(暂无消息)' }}
           </div>
         </div>
         <span v-if="chat.unread" class="kp-fab-badge kp-chat-unread">{{ chat.unread }}</span>
       </div>
       <div v-if="!chats.length" class="kp-empty">
-        <i class="fa-regular fa-address-book"></i>
+        <KpIcon i="users" />
         通讯录为空
       </div>
     </div>

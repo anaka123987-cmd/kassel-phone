@@ -1279,3 +1279,206 @@
   max-height: 180px;
   overflow-y: auto;
 }
+
+/* ============================================================
+   v1.2 视觉升级: 主题色系统 / 图标尺寸 / 新组件 / 细节打磨
+   ============================================================ */
+
+/* ---- 主题色预设 ---- */
+#kassel-phone-root[data-kp-accent='bronze'] {
+  --kp-gold: #c9a86a; --kp-gold-bright: #e8c98a; --kp-gold-deep: #9a7b45;
+  --kp-line: rgba(201, 168, 106, 0.22); --kp-line-soft: rgba(201, 168, 106, 0.12);
+}
+#kassel-phone-root[data-kp-accent='crimson'] {
+  --kp-gold: #d88088; --kp-gold-bright: #f0a5aa; --kp-gold-deep: #a04855;
+  --kp-line: rgba(216, 128, 136, 0.24); --kp-line-soft: rgba(216, 128, 136, 0.13);
+}
+#kassel-phone-root[data-kp-accent='ice'] {
+  --kp-gold: #7fb8d8; --kp-gold-bright: #a9d8f0; --kp-gold-deep: #4a7fa0;
+  --kp-line: rgba(127, 184, 216, 0.24); --kp-line-soft: rgba(127, 184, 216, 0.13);
+}
+#kassel-phone-root[data-kp-accent='violet'] {
+  --kp-gold: #b08fd8; --kp-gold-bright: #cdb0f0; --kp-gold-deep: #7a5aa0;
+  --kp-line: rgba(176, 143, 216, 0.24); --kp-line-soft: rgba(176, 143, 216, 0.13);
+}
+
+/* ---- 图标默认尺寸与对齐 ---- */
+#kassel-phone-root .kp-ico {
+  flex: none;
+  vertical-align: -3px;
+}
+
+.kp-app-header .kp-ico { width: 16px; height: 16px; }
+.kp-tab .kp-ico { width: 18px; height: 18px; }
+.kp-set-tab .kp-ico { width: 13px; height: 13px; }
+.kp-mode-btn .kp-ico { width: 20px; height: 20px; }
+.kp-empty .kp-ico { width: 28px; height: 28px; display: block; margin: 0 auto 8px; color: rgba(201, 168, 106, 0.4); }
+.kp-set-title .kp-ico { width: 13px; height: 13px; color: var(--kp-gold); }
+.kp-btn .kp-ico { width: 13px; height: 13px; }
+.kp-like .kp-ico { width: 12px; height: 12px; }
+.kp-like.kp-liked .kp-ico { fill: currentColor; }
+.kp-post-foot .kp-ico { width: 12px; height: 12px; vertical-align: -2px; }
+.kp-chip .kp-ico { width: 10px; height: 10px; }
+.kp-sb-loc { width: 12px; height: 12px; color: var(--kp-ice-soft); }
+
+/* 点赞态强调 */
+.kp-like.kp-liked {
+  color: #eba4b2;
+  background: rgba(217, 120, 138, 0.16);
+  border-color: rgba(217, 120, 138, 0.45);
+}
+
+/* ---- 手机壳: 龙鳞纹理背景 ---- */
+.kp-phone {
+  position: fixed;
+}
+.kp-phone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(201, 168, 106, 0.045) 1px, transparent 1.4px);
+  background-size: 16px 16px;
+  pointer-events: none;
+  z-index: 0;
+}
+.kp-statusbar, .kp-content, .kp-tabbar {
+  position: relative;
+  z-index: 1;
+}
+
+/* 状态栏时间: 鎏金渐变字 */
+.kp-statusbar .kp-sb-time {
+  font-size: 13px;
+  background: linear-gradient(120deg, #f0d9a8, #e8c98a 45%, #b98f4e);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* tab 激活辉光 */
+.kp-tab.kp-active .kp-ico {
+  filter: drop-shadow(0 0 6px rgba(201, 168, 106, 0.55));
+}
+.kp-tab.kp-active {
+  background: linear-gradient(160deg, rgba(201, 168, 106, 0.16), rgba(201, 168, 106, 0.05));
+  border: 1px solid rgba(201, 168, 106, 0.18);
+}
+
+/* 卡片悬停微抬升 */
+.kp-card.kp-tappable:hover {
+  transform: translateY(-1px);
+  border-color: rgba(201, 168, 106, 0.45);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+/* 头像渐变环 */
+.kp-avatar {
+  box-shadow:
+    0 0 0 1.5px rgba(255, 255, 255, 0.14),
+    0 2px 6px rgba(0, 0, 0, 0.35);
+  color: rgba(8, 12, 22, 0.82);
+}
+
+/* ---- 新组件 ---- */
+.kp-seg {
+  display: inline-flex;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  flex: none;
+}
+.kp-seg button {
+  padding: 4px 12px;
+  font-size: 11px;
+  color: var(--kp-text-faint);
+  background: rgba(255, 255, 255, 0.04);
+  transition: all 0.18s ease;
+}
+.kp-seg button.kp-seg-on {
+  color: var(--kp-ink-0);
+  background: linear-gradient(135deg, var(--kp-gold-bright), var(--kp-gold));
+  font-weight: 700;
+}
+
+.kp-prompt-editor {
+  width: 100%;
+  min-height: 220px;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 10.5px;
+  line-height: 1.65;
+  resize: vertical;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.kp-set-desc {
+  font-size: 11px;
+  color: var(--kp-text-faint);
+  line-height: 1.7;
+  margin-bottom: 8px;
+}
+.kp-set-desc code {
+  color: var(--kp-ice-soft);
+  background: rgba(127, 184, 216, 0.1);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-family: Consolas, monospace;
+  font-size: 10px;
+}
+
+.kp-accent-row {
+  display: flex;
+  gap: 8px;
+}
+.kp-accent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 0 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  transition: all 0.2s ease;
+}
+.kp-accent small {
+  font-size: 10px;
+  color: var(--kp-text-dim);
+}
+.kp-accent-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.4), inset 0 -3px 6px rgba(0, 0, 0, 0.25);
+}
+.kp-accent.kp-accent-on {
+  border-color: var(--kp-gold);
+  background: rgba(201, 168, 106, 0.1);
+}
+.kp-accent.kp-accent-on small {
+  color: var(--kp-gold-bright);
+}
+
+/* 群聊发言人标签 */
+.kp-bubble-speaker {
+  font-size: 10px;
+  color: var(--kp-ice-soft);
+  margin: 0 0 3px 4px;
+}
+
+/* 滚动条更细腻 */
+#kassel-phone-root ::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+/* tab 标签不换行 */
+.kp-set-tab span {
+  white-space: nowrap;
+  font-size: 9.5px;
+}
+.kp-set-tab {
+  gap: 2px;
+  padding: 6px 0 5px;
+}

@@ -6,7 +6,8 @@
  * - 解析返回结果中的 <kassel_phone>...</kassel_phone> JSON
  */
 
-const OUTPUT_FORMAT_SPEC = `【任务】你是《龙族》世界观中卡塞尔学院的校园信息系统。请根据【剧情摘要】和【世界观资料】，模拟生成学院手机终端的最新内容。
+/** 默认生成提示词模板 (可在设置页「提示词」中编辑; 占位符 {{story}} {{worldbook}}) */
+export const DEFAULT_PHONE_PROMPT = `【任务】你是《龙族》世界观中卡塞尔学院的校园信息系统。请根据【剧情摘要】和【世界观资料】，模拟生成学院手机终端的最新内容。
 
 【输出格式要求】只输出一个 <kassel_phone> 标签，标签内为合法 JSON（不要输出任何其他文字、不要使用 markdown 代码块）：
 <kassel_phone>
@@ -15,7 +16,7 @@ const OUTPUT_FORMAT_SPEC = `【任务】你是《龙族》世界观中卡塞尔�
     { "board": "版块(校园公告|屠龙技研|灌水区|失物招领)", "title": "帖子标题", "author": "发帖人", "hue": 0-360的整数(代表头像色相), "time": "如: 刚刚/10分钟前/今天 14:30", "hot": true或false, "likes": 点赞数, "content": "帖子正文, 可用\\n换行", "replies": [ { "author": "回复人", "time": "时间", "content": "回复内容" } ] }
   ] },
   "messages": { "chats": [
-    { "name": "角色名(如: 芬格尔/楚子航/诺诺/恺撒·加图索/EVA)", "unread": 0或1, "messages": [ { "from": "them或me", "text": "消息内容", "time": "时间" } ] }
+    { "name": "角色名(如: 芬格尔/楚子航/诺诺/恺撒·加图索/EVA)", "isGroup": true或false(群聊时name为群名), "unread": 0或1, "messages": [ { "from": "them或me", "speaker": "发言人(群聊必填)", "text": "消息内容", "time": "时间" } ] }
   ] },
   "news": [
     { "tag": "栏目标签(头条|校园|提醒|活动)", "title": "标题", "source": "来源", "time": "时间", "content": "正文" }
@@ -24,19 +25,22 @@ const OUTPUT_FORMAT_SPEC = `【任务】你是《龙族》世界观中卡塞尔�
 </kassel_phone>
 
 【要求】
-1. forum.posts 给 2-4 个帖子；messages.chats 给 1-3 个角色会话；news 给 1-3 条资讯。
+1. forum.posts 给 3-6 个帖子；messages.chats 给 1-3 个会话；news 给 1-3 条资讯。
 2. 内容必须贴合剧情摘要的最新进展与世界观设定，延续当前剧情氛围，可引用剧情中的事件。
 3. 角色性格必须符合原著：楚子航寡言、恺撒高傲、芬格尔爱吐槽、诺诺活泼、EVA 是礼貌的校园 AI。
-4. 所有文本使用中文。只输出 <kassel_phone> 标签内容本身。`;
+4. 所有文本使用中文。只输出 <kassel_phone> 标签内容本身。
 
-function buildUserPrompt({ storyText, worldbookText }) {
-  let prompt = `<phone_generation_task>\n${OUTPUT_FORMAT_SPEC}\n</phone_generation_task>`;
-  if (worldbookText) {
-    prompt += `\n<worldbook>\n${worldbookText}\n</worldbook>`;
-  }
-  prompt += `\n<story>\n${storyText || '（暂无剧情，请根据世界观资料生成学院日常内容。）'}\n</story>`;
-  prompt += `\n请立即输出 <kassel_phone> 内容。`;
-  return prompt;
+【剧情摘要】
+{{story}}
+
+【世界观资料】
+{{worldbook}}`;
+
+function buildUserPrompt({ settings, storyText, worldbookText }) {
+  const tpl = (settings?.promptTemplate || '').trim() || DEFAULT_PHONE_PROMPT;
+  return tpl
+    .replaceAll('{{story}}', storyText || '（暂无剧情，请根据世界观资料生成学院日常内容。）')
+    .replaceAll('{{worldbook}}', worldbookText || '（无）');
 }
 
 function parsePhonePayload(text) {
@@ -75,7 +79,7 @@ export async function callSecondApiForPhoneContent({ settings, storyText, worldb
     throw new Error('第二 API 配置不完整 (缺少 URL 或模型名)');
   }
 
-  const userPrompt = buildUserPrompt({ storyText, worldbookText });
+  const userPrompt = buildUserPrompt({ settings, storyText, worldbookText });
   const attempts = Math.max(1, (cfg.retries ?? 3) + 1);
   const timeoutMs = Number(cfg.timeout) > 0 ? Number(cfg.timeout) : 30000;
 

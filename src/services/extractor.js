@@ -39,7 +39,11 @@ function applyExclusions(block, extraction) {
   let out = block;
   if (extraction.excludeHtmlComments) out = stripHtmlComments(out);
   out = trimEdges(out, extraction.excludeHead, extraction.excludeTail);
-  return out.trim();
+  out = out.trim();
+  // 单楼字符上限 (防 token 爆炸; 0 = 不限)
+  const cap = Number(extraction.maxCharsPerFloor) || 0;
+  if (cap > 0 && out.length > cap) out = out.slice(0, cap) + '…(已截断)';
+  return out;
 }
 
 /**

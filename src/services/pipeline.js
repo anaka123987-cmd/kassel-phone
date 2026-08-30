@@ -13,8 +13,9 @@ import { store, log, showToast, persistContent } from '../store.js';
 import { getChatMessagesSafe, getLastMessageIdSafe, generateRawSafe, getBoundWorldbooksSafe, getChatNameSafe, mockGenerateRaw, tavernAvailable } from './tavern.js';
 import { extractFloorsForPrompt } from './extractor.js';
 import { callSecondApiForPhoneContent, parsePhonePayload, buildUserPrompt } from './secondApi.js';
+import { syncPhoneInjection } from './injector.js';
 
-/** 从设置的选择表中拼出世界书文本 */
+/** 从设置的选择表中拼出世界书文本 (含最大注入字符限制) */
 export async function collectWorldbookText() {
   const selection = store.settings.worldbookSelection || {};
   const bookNames = Object.keys(selection).filter((b) => (selection[b] || []).length > 0);
@@ -31,12 +32,17 @@ export async function collectWorldbookText() {
       parts.push(`【${book.name} · ${en.name}】\n${en.content}`);
     }
   }
-  const text = parts.join('\n\n');
+  let text = parts.join('\n\n');
+  const cap = Number(store.settings.worldbookMaxChars) || 0;
+  if (cap > 0 && text.length > cap) {
+    text = text.slice(0, cap) + '…(世界书超出上限已截断)';
+    log(`[世界书] 超过上限 ${cap} 字, 已截断`);
+  }
   log(`[世界书] 注入 ${parts.length} 个条目, 共 ${text.length} 字`);
   return text;
 }
 
-/** 提取最近 N 楼的正文 */
+/** 提取最近 N 楼的正文 (记录字符量供设置页展示) */
 export function collectStoryText() {
   const floors = Math.max(1, Number(store.settings.extraction.floors) || 6);
   const last = getLastMessageIdSafe();
@@ -44,6 +50,7 @@ export function collectStoryText() {
   const begin = Math.max(0, last - floors + 1);
   const messages = getChatMessagesSafe(`${begin}-${last}`);
   const story = extractFloorsForPrompt(store.settings, messages);
+  store.lastExtraction = { chars: story.length, floors, time: Date.now() };
   log(`[提取] 第${begin}-${last}楼 → ${story.length} 字 (标签:${store.settings.extraction.tag}${store.settings.extraction.extraTag ? ` + 附加:${store.settings.extraction.extraTag}` : ''}, 含用户消息:${store.settings.extraction.includeUser ? '是' : '否'})`);
   return story;
 }
@@ -82,16 +89,29 @@ export function mergePhonePayload(payload) {
         existing.add(`${p.author}|${p.title}`);
         return true;
       });
-    c.forum.posts = [...fresh, ...c.forum.posts].slice(0, 24);
+    if (store.settings.forumMode === 'append') {
+      // 追加合并: 新帖置顶, 保留旧帖
+      c.forum.posts = [...fresh, ...c.forum.posts].slice(0, 24);
+    } else {
+      // 全量替换: 论坛完全由 API 新生成 (内置帖仅在首次/失败时兜底)
+      c.forum.posts = fresh;
+    }
   }
 
   if (payload?.messages?.chats?.length) {
     for (const chat of payload.messages.chats) {
       if (!chat?.name) continue;
-      const target = c.messages.chats.find((x) => x.name === chat.name);
+      const isGroup = !!chat.isGroup;
+      const target = c.messages.chats.find((x) => x.name === chat.name && (isGroup ? !!x.isGroup : !x.isGroup));
       const msgs = (chat.messages || [])
         .filter((m) => m && m.text)
-        .map((m, i) => ({ from: m.from === 'me' ? 'me' : 'them', text: String(m.text), time: m.time || '', _k: `m-${Date.now()}-${i}` }));
+        .map((m, i) => ({
+          from: m.from === 'me' ? 'me' : 'them',
+          speaker: isGroup && m.from !== 'me' ? String(m.speaker || chat.name) : undefined,
+          text: String(m.text),
+          time: m.time || '',
+          _k: `m-${Date.now()}-${i}`,
+        }));
       if (target) {
         if (msgs.length) target.messages = msgs;
         if (typeof chat.unread === 'number') target.unread = chat.unread;
@@ -99,10 +119,11 @@ export function mergePhonePayload(payload) {
         c.messages.chats.push({
           id: `ai-${Date.now()}-${chat.name}`,
           name: chat.name,
-          role: '同学',
+          isGroup,
+          role: isGroup ? '群聊' : '同学',
           hue: 200,
           unread: Number(chat.unread) || 0,
-          quickReplies: ['我在', '知道了', '回头聊'],
+          quickReplies: isGroup ? ['收到', '知道了', '好的'] : ['我在', '怎么了?', '好的'],
           messages: msgs,
         });
       }
@@ -198,7 +219,7 @@ async function callWithFallback(storyText, worldbookText) {
 
 function buildFallbackPrompt(storyText, worldbookText) {
   // 降级时复用与第二 API 相同的提示词结构
-  return buildUserPrompt({ storyText, worldbookText });
+  return buildUserPrompt({ settings: store.settings, storyText, worldbookText });
 }
 
 /**
@@ -221,6 +242,7 @@ export async function refreshPhoneContent(reason = '手动') {
     const storyText = collectStoryText();
     const worldbookText = await collectWorldbookText();
     const ok = await callWithFallback(storyText, worldbookText);
+    if (ok) syncPhoneInjection(); // 内容更新后同步常驻注入
     log(`[流水线] 刷新结束, 结果: ${ok ? '成功' : '失败/跳过'}`);
     return ok;
   } catch (e) {

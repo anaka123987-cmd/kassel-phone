@@ -6,6 +6,7 @@
  * - 底部 tab: 论坛 / 私信 / 学籍 / 资讯 / 设置
  */
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import KpIcon from './KpIcon.vue';
 import { store, unreadTotal } from '../store.js';
 import { hostWindow } from '../env.js';
 import { tavernAvailable } from '../services/tavern.js';
@@ -16,11 +17,11 @@ import NewsApp from '../apps/NewsApp.vue';
 import SettingsView from '../components/SettingsView.vue';
 
 const VIEWS = {
-  forum: { comp: ForumApp, icon: 'fa-comments', label: '论坛' },
-  messages: { comp: MessageApp, icon: 'fa-paper-plane', label: '私信' },
-  profile: { comp: ProfileApp, icon: 'fa-id-card', label: '学籍' },
-  news: { comp: NewsApp, icon: 'fa-bullhorn', label: '资讯' },
-  settings: { comp: SettingsView, icon: 'fa-gear', label: '设置' },
+  forum: { comp: ForumApp, icon: 'forum', label: '论坛' },
+  messages: { comp: MessageApp, icon: 'send', label: '私信' },
+  profile: { comp: ProfileApp, icon: 'id-card', label: '学籍' },
+  news: { comp: NewsApp, icon: 'megaphone', label: '资讯' },
+  settings: { comp: SettingsView, icon: 'cog', label: '设置' },
 };
 
 const tabs = Object.keys(VIEWS);
@@ -104,13 +105,13 @@ onBeforeUnmount(() => {
       <!-- 顶部状态栏 -->
       <div class="kp-statusbar">
         <span class="kp-sb-time">{{ displayTime }}</span>
-        <i v-if="store.mvu?.location" class="fa-solid fa-location-dot kp-sb-loc" :title="store.mvu.location"></i>
+        <KpIcon v-if="store.mvu?.location" i="map-pin" class="kp-sb-loc" :title="store.mvu.location" />
         <span class="kp-sb-spacer"></span>
         <span class="kp-sb-right">
-          <i class="fa-solid" :class="store.pipeline.running ? 'fa-sync kp-sb-spinning' : 'fa-signal'"></i>
+          <KpIcon :i="store.pipeline.running ? 'refresh' : 'wifi'" :class="{ 'kp-sb-spinning': store.pipeline.running }" />
           <span class="kp-sb-dot" :class="{ 'kp-offline': !tavernAvailable() }"></span>
           <button class="kp-minbtn" title="最小化" @click="minimize">
-            <i class="fa-solid fa-minus"></i>
+            <KpIcon i="minus" />
           </button>
         </span>
       </div>
@@ -131,7 +132,7 @@ onBeforeUnmount(() => {
           :class="{ 'kp-active': store.activeTab === tab }"
           @click="store.activeTab = tab"
         >
-          <i class="fa-solid" :class="VIEWS[tab].icon"></i>
+          <KpIcon :i="VIEWS[tab].icon" />
           <span>{{ VIEWS[tab].label }}</span>
           <span v-if="tab === 'messages' && unreadTotal > 0" class="kp-tab-badge">{{ unreadTotal }}</span>
         </button>

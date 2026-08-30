@@ -32,6 +32,8 @@ export const store = reactive({
   mvu: null,
   personaName: null,
   chatName: 'current-chat',
+  /** 最近一次提取的信息 (设置页展示字符量/估算) */
+  lastExtraction: null,
 
   /** 第二 API 流水线状态 */
   pipeline: { running: false, lastError: null },

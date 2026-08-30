@@ -11,8 +11,6 @@ import { log } from './store.js';
 
 const CONTAINER_ID = 'kassel-phone-root';
 const STYLE_ID = 'kassel-phone-style';
-const FA_ID = 'kassel-phone-fa';
-const FA_URL = 'https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css';
 
 function injectStyle(doc) {
   if (doc.getElementById(STYLE_ID)) return;
@@ -22,21 +20,11 @@ function injectStyle(doc) {
   doc.head.appendChild(style);
 }
 
-function injectFontAwesome(doc) {
-  if (doc.getElementById(FA_ID)) return;
-  const link = doc.createElement('link');
-  link.id = FA_ID;
-  link.rel = 'stylesheet';
-  link.href = FA_URL;
-  doc.head.appendChild(link);
-}
-
 function boot() {
   env.detect();
   const doc = hostDocument();
 
   injectStyle(doc);
-  injectFontAwesome(doc);
 
   // 防重复实例 (脚本重载时移除旧容器)
   const existing = doc.getElementById(CONTAINER_ID);

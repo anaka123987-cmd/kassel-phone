@@ -3,6 +3,7 @@
  * 校园资讯 App: 公告/新闻列表, 点击展开正文
  */
 import { ref, computed } from 'vue';
+import KpIcon from '../components/KpIcon.vue';
 import { store } from '../store.js';
 
 const expandedId = ref(null);
@@ -10,10 +11,10 @@ const expandedId = ref(null);
 const news = computed(() => store.content.news || []);
 
 const tagIcon = {
-  头条: 'fa-star',
-  校园: 'fa-building-columns',
-  提醒: 'fa-triangle-exclamation',
-  活动: 'fa-champagne-glasses',
+  头条: 'star',
+  校园: 'landmark',
+  提醒: 'alert',
+  活动: 'sparkles',
 };
 
 function toggle(item) {
@@ -38,7 +39,7 @@ function toggle(item) {
     >
       <div class="kp-news-head">
         <span class="kp-chip" :class="{ 'kp-red': item.tag === '头条', 'kp-blue': item.tag === '提醒' }">
-          <i class="fa-solid" :class="tagIcon[item.tag] || 'fa-tag'"></i>
+          <KpIcon :i="tagIcon[item.tag] || 'star'" />
           {{ item.tag }}
         </span>
         <small class="kp-news-time">{{ item.time }} · {{ item.source }}</small>
@@ -47,11 +48,11 @@ function toggle(item) {
       <div v-if="expandedId === item.id" class="kp-news-content">{{ item.content }}</div>
       <div v-else class="kp-news-preview">{{ item.content }}</div>
       <div class="kp-news-expand">
-        <i class="fa-solid" :class="expandedId === item.id ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+        <KpIcon :i="expandedId === item.id ? 'chevron-up' : 'chevron-down'" />
       </div>
     </div>
     <div v-if="!news.length" class="kp-empty">
-      <i class="fa-regular fa-newspaper"></i>
+      <KpIcon i="news" />
       暂无资讯
     </div>
   </div>

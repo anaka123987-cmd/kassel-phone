@@ -11,9 +11,34 @@ import { hostWindow, hostDocument } from './env.js';
 import { ensureMvuReady, getLatestStatData, summarizeMvu } from './services/mvu.js';
 import { getLastMessageIdSafe, getChatMessagesSafe, duringGeneratingSafe, getPersonaNameSafe } from './services/tavern.js';
 import { ensureChatName, refreshPhoneContent } from './services/pipeline.js';
+import { initSyncPointer, ingestFloorMessages } from './services/msgSync.js';
+import { syncPhoneInjection } from './services/injector.js';
 
 /* 设置变化 → 持久化 */
 watch(() => store.settings, saveSettingsToStorage, { deep: true });
+
+/* 主题色 */
+watch(
+  () => store.settings.accent,
+  (v) => hostDocument().getElementById('kassel-phone-root')?.setAttribute('data-kp-accent', v || 'bronze'),
+  { immediate: true },
+);
+
+/* 自定义 CSS (实时生效) */
+watch(
+  () => store.settings.customCss,
+  (css) => {
+    const doc = hostDocument();
+    let el = doc.getElementById('kassel-phone-custom');
+    if (!el) {
+      el = doc.createElement('style');
+      el.id = 'kassel-phone-custom';
+      doc.head.appendChild(el);
+    }
+    el.textContent = css || '';
+  },
+  { immediate: true },
+);
 
 /* 减少动效: prefers-reduced-motion 或宿主页 st-reduce-motion 类 */
 const reduceMotion = ref(false);
@@ -39,6 +64,9 @@ function scheduleRefresh() {
 
 async function pollOnce() {
   try {
+    // 剧情消息解析 (AI 输出的 <手机消息>/<群消息> → 手机私信)
+    ingestFloorMessages();
+
     // MVU 状态 (时间/地点/好感度)
     const stat = await getLatestStatData();
     store.mvu = summarizeMvu(stat);
@@ -70,7 +98,11 @@ onMounted(async () => {
 
   await ensureChatName();
   await ensureMvuReady();
+  // 消息解析游标必须先于首次轮询初始化 (酒馆内只解析启动后的新楼层)
+  initSyncPointer();
   await pollOnce();
+  // 内容恢复后建立常驻注入
+  syncPhoneInjection();
   setInterval(pollOnce, 1000);
   store.ready = true;
   log(`组件就绪 (环境: ${store.chatName}, API 模式: ${store.settings.apiMode === 'multi' ? '多API' : '单API'})`);

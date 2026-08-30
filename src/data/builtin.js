@@ -184,6 +184,20 @@ export const BUILTIN_CONTENT = {
           { from: 'them', text: '在这里，你可以做任何事——除了平庸。', time: '开学日' },
         ],
       },
+      {
+        id: 'c7',
+        name: '狮心会',
+        isGroup: true,
+        role: '群聊 · 48 人',
+        hue: 50,
+        unread: 0,
+        quickReplies: ['收到', '@恺撒·加图索 收到', '明天见'],
+        messages: [
+          { from: 'them', speaker: '恺撒·加图索', text: '明早五点半，体育馆实战对练。迟到者负重十公里。', time: '08:00' },
+          { from: 'them', speaker: '楚子航', text: '收到。', time: '08:01' },
+          { from: 'them', speaker: '芬格尔', text: '……好吧，我尽量活着到。', time: '08:05' },
+        ],
+      },
     ],
   },
   news: [

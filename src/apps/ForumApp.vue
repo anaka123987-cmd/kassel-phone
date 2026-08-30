@@ -3,6 +3,7 @@
  * 论坛 App: 版块筛选 → 帖子列表 → 帖子详情 (点赞 / 本地回帖)
  */
 import { ref, computed } from 'vue';
+import KpIcon from '../components/KpIcon.vue';
 import { store, isPostLiked, toggleLikePost, persistContent, showToast } from '../store.js';
 import { refreshPhoneContent } from '../services/pipeline.js';
 import { isMultiApi } from '../store.js';
@@ -63,7 +64,7 @@ async function refresh() {
   <!-- 帖子详情 -->
   <template v-if="openPost">
     <div class="kp-app-header">
-      <button class="kp-iconbtn" @click="back"><i class="fa-solid fa-arrow-left"></i></button>
+      <button class="kp-iconbtn" @click="back"><KpIcon i="arrow-left" /></button>
       <div>
         <div class="kp-app-title" style="font-size: 14px">帖子详情</div>
         <div class="kp-app-sub">{{ openPost.board }}</div>
@@ -78,7 +79,7 @@ async function refresh() {
             <small>{{ openPost.time }}</small>
           </div>
           <button class="kp-like" :class="{ 'kp-liked': isPostLiked(openPost) }" @click="like(openPost)">
-            <i class="fa-solid fa-heart"></i>{{ openPost.likes || 0 }}
+            <KpIcon i="heart" />{{ openPost.likes || 0 }}
           </button>
         </div>
         <div class="kp-post-title">{{ openPost.title }}</div>
@@ -97,7 +98,7 @@ async function refresh() {
       <div class="kp-reply-box">
         <input v-model="replyDraft" type="text" placeholder="友善回帖, 理性讨论…" @keydown.enter="submitReply" />
         <button class="kp-btn" :disabled="!replyDraft.trim()" @click="submitReply">
-          <i class="fa-solid fa-paper-plane"></i>
+          <KpIcon i="send" />
         </button>
       </div>
     </div>
@@ -112,7 +113,7 @@ async function refresh() {
       </div>
       <div class="kp-header-actions">
         <button v-if="isMultiApi" class="kp-iconbtn" :class="{ 'kp-spinning': refreshing }" title="刷新内容" @click="refresh">
-          <i class="fa-solid fa-rotate-right"></i>
+          <KpIcon i="refresh" />
         </button>
       </div>
     </div>
@@ -136,7 +137,7 @@ async function refresh() {
             <small>{{ post.time }}</small>
           </div>
           <span v-if="post.pinned" class="kp-chip kp-red">置顶</span>
-          <span v-else-if="post.hot" class="kp-chip kp-red"><i class="fa-solid fa-fire"></i>热</span>
+          <span v-else-if="post.hot" class="kp-chip kp-red"><KpIcon i="flame" />热</span>
         </div>
         <div class="kp-post-title">
           <span class="kp-post-board">[{{ post.board }}]</span>
@@ -144,12 +145,12 @@ async function refresh() {
         </div>
         <div class="kp-post-preview">{{ post.content }}</div>
         <div class="kp-post-foot">
-          <span><i class="fa-regular fa-comment"></i> {{ (post.replies || []).length }}</span>
-          <span><i class="fa-regular fa-heart"></i> {{ post.likes || 0 }}</span>
+          <span><KpIcon i="message-dots" /> {{ (post.replies || []).length }}</span>
+          <span><KpIcon i="heart" /> {{ post.likes || 0 }}</span>
         </div>
       </div>
       <div v-if="!posts.length" class="kp-empty">
-        <i class="fa-regular fa-folder-open"></i>
+        <KpIcon i="folder" />
         这个版块还没有帖子
       </div>
     </div>

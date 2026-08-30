@@ -5,7 +5,6 @@
 import { env } from '../env.js';
 
 const w = () => window;
-
 export function tavernAvailable() {
   return env.inTavern;
 }
@@ -16,17 +15,22 @@ export function getCurrentMessageIdSafe() {
   try {
     if (typeof w().getCurrentMessageId === 'function') return w().getCurrentMessageId();
   } catch (e) { /* noop */ }
-  return 0;
+  return mockLastId();
 }
 
 export function getLastMessageIdSafe() {
   try {
     if (typeof w().getLastMessageId === 'function') return w().getLastMessageId();
   } catch (e) { /* noop */ }
-  return 0;
+  return mockLastId();
+}
+
+function mockLastId() {
+  return MOCK_MESSAGES.length ? MOCK_MESSAGES[MOCK_MESSAGES.length - 1].message_id : 0;
 }
 
 export function getChatMessagesSafe(range, option) {
+  if (env.mock) return MOCK_MESSAGES;
   try {
     if (typeof w().getChatMessages === 'function') {
       return w().getChatMessages(range, option) || [];
@@ -142,7 +146,8 @@ const MOCK_MESSAGES = [
     message: `<content>清晨的芝加哥郊区笼着薄雾，校车碾过落满橡果的车道。你攥着那封火漆封缄的录取通知书，抬头看见青铜校门上盘踞的龙形浮雕。
 「欢迎来到卡塞尔学院。」白发苍苍的校长站在台阶顶端，风衣猎猎，「在这里，你可以做任何事——除了平庸。」
 诺玛系统的提示音在你耳边轻轻响起：学籍绑定完成。</content>
-<sum>新生报到；昂热校长致欢迎词；诺玛系统完成学籍绑定。</sum>`,
+<sum>新生报到；昂热校长致欢迎词；诺玛系统完成学籍绑定。</sum>
+<手机消息|诺诺>师弟，欢迎来到卡塞尔！周末学生会有迎新活动，我来接你？</手机消息>`,
   },
 ];
 
