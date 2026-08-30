@@ -103,7 +103,7 @@ async function refresh() {
       <button class="kp-iconbtn" @click="back"><KpIcon i="arrow-left" /></button>
       <div>
         <div class="kp-app-title" style="font-size: 14px">帖子详情</div>
-        <div class="kp-app-sub">{{ openPost.board }}</div>
+        <div class="kp-app-sub">守夜人论坛 · {{ openPost.board }}</div>
       </div>
     </div>
     <div class="kp-scroll">
@@ -149,8 +149,8 @@ async function refresh() {
   <template v-else>
     <div class="kp-app-header">
       <div>
-        <div class="kp-app-title">卡塞尔<span class="kp-gold">论坛</span></div>
-        <div class="kp-app-sub">Kassel BBS</div>
+        <div class="kp-app-title">守夜人<span class="kp-gold">论坛</span></div>
+        <div class="kp-app-sub">Night Watchmen BBS</div>
       </div>
       <div class="kp-header-actions">
         <button v-if="isMultiApi" class="kp-iconbtn" :class="{ 'kp-spinning': refreshing }" title="刷新内容" @click="refresh">

@@ -9,11 +9,16 @@
  */
 import { store, log, showToast } from '../store.js';
 import { tavernAvailable } from './tavern.js';
+import { DEFAULT_PROMPTS } from './prompts.js';
 
 export const INJECT_ID = 'kassel-phone-digest';
 const REPLY_ID = 'kassel-phone-reply';
 
-export const FORMAT_SPEC = `【校园手机消息格式】当剧情中需要某角色给玩家的校园手机发私信时, 在回复正文末尾按此格式输出(会被前端解析为手机私信): <手机消息|角色名>消息内容</手机消息> ; 群聊消息: <群消息|群名|发言人>消息内容</群消息> 。一条回复中可输出多条, 内容要符合角色性格与当前剧情。`;
+/** 生效提示词: 用户编辑值优先, 缺省回落默认 */
+function effectivePrompt(key) {
+  const v = store.settings.prompts?.[key];
+  return v == null || v === '' ? DEFAULT_PROMPTS[key] : v;
+}
 
 export function buildDigest() {
   const c = store.content;
@@ -24,7 +29,6 @@ export function buildDigest() {
   const titles = posts.slice(0, 3).map((p) => `《${p.title}》`).join('');
   if (titles) {
     parts.push(`论坛热帖:${titles}`);
-    // 附第一帖内容预览, 让 AI 能在剧情中具体谈论论坛内容
     if (posts[0]?.content) parts.push(`热帖摘要:「${String(posts[0].content).replace(/\s+/g, ' ').slice(0, 40)}」`);
   }
   const unread = (c.messages?.chats || [])
@@ -35,17 +39,28 @@ export function buildDigest() {
   if (unread) parts.push(`手机未读:${unread}`);
   const news = (c.news || []).slice(0, 2).map((n) => `《${n.title}》`).join('');
   if (news) parts.push(`校园资讯:${news}`);
-  return `[校园手机同步] 玩家的卡塞尔学院手机当前状态 → ${parts.join(' | ')}`;
+
+  // 摘要模板可编辑 (占位符: {{time}} {{location}} {{posts}} {{postPreview}} {{unread}} {{news}} {{info}})
+  const tpl = effectivePrompt('digest');
+  const text = tpl
+    .replaceAll('{{time}}', store.mvu?.datetime || '')
+    .replaceAll('{{location}}', store.mvu?.location || '')
+    .replaceAll('{{posts}}', titles)
+    .replaceAll('{{postPreview}}', posts[0]?.content ? String(posts[0].content).replace(/\s+/g, ' ').slice(0, 40) : '')
+    .replaceAll('{{unread}}', unread)
+    .replaceAll('{{news}}', news)
+    .replaceAll('{{info}}', parts.join(' | '));
+  return text;
 }
 
-/** 常驻注入手机摘要 + 格式规范; 返回是否成功 */
+/** 常驻注入: 摘要模板 + 消息格式规范 (均可编辑) */
 export function syncPhoneInjection() {
   if (!tavernAvailable() || typeof window.injectPrompts !== 'function') return false;
   if (!store.settings.sync?.injectEnabled) {
     removePhoneInjection();
     return false;
   }
-  const content = `${buildDigest()}\n${FORMAT_SPEC}`;
+  const content = `${buildDigest()}\n${effectivePrompt('formatSpec')}`;
   try {
     window.injectPrompts(
       [
@@ -82,7 +97,12 @@ export function removePhoneInjection() {
 export async function sendPhoneReply(chat, text) {
   const useInject = store.settings.sync?.replyInject !== false;
   if (useInject && tavernAvailable() && typeof window.injectPrompts === 'function') {
-    const label = chat.isGroup ? `在群聊「${chat.name}」中发言` : `通过手机回复「${chat.name}」`;
+    const action = chat.isGroup ? `在群聊「${chat.name}」中发言` : `回复「${chat.name}」`;
+    // 回复模板可编辑 (占位符: {{action}} {{chat}} {{text}})
+    const content = effectivePrompt('reply')
+      .replaceAll('{{action}}', action)
+      .replaceAll('{{chat}}', chat.name)
+      .replaceAll('{{text}}', text);
     try {
       window.injectPrompts(
         [
@@ -91,12 +111,12 @@ export async function sendPhoneReply(chat, text) {
             position: 'in_chat',
             depth: 0,
             role: 'system',
-            content: `[玩家通过校园手机${label}："${text}"]`,
+            content,
           },
         ],
         { once: true },
       );
-      log(`[注入] 手机回复已注入(下一次生成生效): ${label} "${text.slice(0, 30)}"`);
+      log(`[注入] 手机回复已注入(下一次生成生效): ${action} "${text.slice(0, 30)}"`);
       if (store.settings.sync?.autoTrigger) {
         try {
           if (typeof window.triggerSlash === 'function') await window.triggerSlash('/trigger');

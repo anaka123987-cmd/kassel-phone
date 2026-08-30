@@ -3,6 +3,7 @@
  * 设置键: kassel_phone_settings
  * 内容键: kassel_phone_content_<聊天文件名>
  */
+import { DEFAULT_PROMPTS } from './prompts.js';
 
 const SETTINGS_KEY = 'kassel_phone_settings';
 
@@ -39,8 +40,8 @@ export const DEFAULT_SETTINGS = {
   /** 外观 */
   accent: 'bronze',
   customCss: '',
-  /** 生成提示词模板 (空 = 使用内置默认模板) */
-  promptTemplate: '',
+  /** 提示词中心 (全部完整可编辑, 默认值即完整文案) */
+  prompts: { ...DEFAULT_PROMPTS },
   /** 世界书最大注入字符数 (0 = 不限) */
   worldbookMaxChars: 2000,
   /** 楼层正文提取规则 */

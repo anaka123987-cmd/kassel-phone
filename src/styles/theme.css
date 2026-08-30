@@ -1567,3 +1567,45 @@
   flex-direction: column;
   gap: 4px;
 }
+
+/* ================ v1.4: 提示词中心折叠编辑器 ================ */
+.kp-pset {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  margin-bottom: 7px;
+  background: rgba(255, 255, 255, 0.02);
+  overflow: hidden;
+}
+.kp-pset summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 12px;
+  color: var(--kp-text);
+  user-select: none;
+}
+.kp-pset summary::-webkit-details-marker { display: none; }
+.kp-pset summary::before {
+  content: '▸';
+  color: var(--kp-text-faint);
+  font-size: 10px;
+  transition: transform 0.15s ease;
+}
+.kp-pset[open] summary::before { transform: rotate(90deg); }
+.kp-pset[open] summary { border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+.kp-pset-name { flex: 1; min-width: 0; }
+.kp-pset-len { font-size: 10px; color: var(--kp-text-faint); flex: none; }
+.kp-pset-reset {
+  width: 22px; height: 22px;
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--kp-text-faint);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  flex: none;
+}
+.kp-pset-reset:hover { color: var(--kp-gold-bright); border-color: rgba(201, 168, 106, 0.4); }
+.kp-pset .kp-prompt-editor { border: none; border-radius: 0; background: rgba(0,0,0,0.18); }

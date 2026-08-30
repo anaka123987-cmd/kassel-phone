@@ -9,7 +9,7 @@ import { store, log, showToast, saveSettingsToStorage } from '../store.js';
 import { getBoundWorldbooksSafe, tavernAvailable } from '../services/tavern.js';
 import { refreshPhoneContent } from '../services/pipeline.js';
 import { syncPhoneInjection, installDisplayRegex } from '../services/injector.js';
-import { DEFAULT_PHONE_PROMPT } from '../services/secondApi.js';
+import { DEFAULT_PROMPTS } from '../services/prompts.js';
 import { SYNC_FORMAT_DOC } from '../services/msgSync.js';
 
 const tab = ref('api');
@@ -33,14 +33,33 @@ const ACCENTS = [
   { id: 'violet', label: '黄昏紫', color: '#b08fd8' },
 ];
 
-/* -------- 提示词 -------- */
-const PH_STORY = '{{story}}';
-const PH_WORLDBOOK = '{{worldbook}}';
-const promptChars = computed(() => (S.promptTemplate || '').trim().length || DEFAULT_PHONE_PROMPT.length);
+/* -------- 提示词中心: 每个提示词完整可编辑, 单独恢复默认 -------- */
+// [key, 标题, 说明, 行数]
+const PROMPT_FIELDS = [
+  { key: 'preset', label: '前置文本 (破限 / 风格前缀)', desc: '置于所有生成请求最前。留空不注入。可自行填写你惯用的破限头部或文风要求。', rows: 4 },
+  { key: 'base', label: '公共设定', desc: '每次内容生成请求的头部, 定义 AI 扮演的角色。', rows: 4 },
+  { key: 'forum', label: '论坛提示词', desc: '守夜人论坛板块的生成要求 (配合「生成范围」开关)。', rows: 7 },
+  { key: 'messages', label: '私信提示词', desc: '角色会话板块的生成要求。', rows: 6 },
+  { key: 'news', label: '资讯提示词', desc: '校园资讯板块的生成要求。', rows: 5 },
+  { key: 'forumReply', label: '回帖回应提示词', desc: '论坛回帖实时回复用的轻量请求。', rows: 4 },
+  { key: 'digest', label: '注入 · 手机摘要模板', desc: '常驻注入的摘要文案。占位符: {{info}} 全部摘要 / {{time}} {{location}} {{posts}} {{postPreview}} {{unread}} {{news}}', rows: 4 },
+  { key: 'formatSpec', label: '注入 · 手机消息格式规范', desc: '教 AI 用 <手机消息|角色名> 格式给手机发消息的说明。', rows: 5 },
+  { key: 'reply', label: '注入 · 手机回复模板', desc: '在手机里回消息时注入的文案。占位符: {{action}} 动作描述 / {{chat}} 会话名 / {{text}} 消息内容', rows: 3 },
+];
+
+function resetPromptField(key) {
+  S.prompts[key] = DEFAULT_PROMPTS[key] ?? '';
+  showToast('已恢复该条默认提示词');
+}
+
+const promptTotal = computed(() =>
+  PROMPT_FIELDS.reduce((s, f) => s + (S.prompts[f.key] || '').length, 0),
+);
+
 function resetPrompt() {
-  S.promptTemplate = '';
+  S.prompts = { ...DEFAULT_PROMPTS };
   saveSettingsToStorage();
-  showToast('已恢复默认生成提示词');
+  showToast('已恢复全部默认提示词');
 }
 
 /* -------- 世界书 -------- */
@@ -332,31 +351,7 @@ function reinstallInjection() {
     <!-- ============ 提示词 ============ -->
     <template v-if="tab === 'prompt'">
       <div class="kp-set-section">
-        <div class="kp-set-title"><KpIcon i="pen" /> 生成提示词 (可编辑)</div>
-        <p class="kp-set-desc">
-          发给第二 API 的完整提示词模板。占位符:
-          <code>{{ PH_STORY }}</code> = 提取的楼层正文,
-          <code>{{ PH_WORLDBOOK }}</code> = 勾选的世界书内容。留空使用默认模板。当前模板 <b>{{ promptChars }}</b> 字。
-        </p>
-        <textarea
-          v-model="S.promptTemplate"
-          class="kp-prompt-editor"
-          :placeholder="DEFAULT_PHONE_PROMPT.slice(0, 160) + '……'"
-          spellcheck="false"
-        ></textarea>
-        <div class="kp-btn-row" style="margin-top: 8px">
-          <button class="kp-btn kp-ghost" style="flex: 1" @click="resetPrompt">
-            <KpIcon i="refresh" /> 恢复默认模板
-          </button>
-          <button class="kp-btn" style="flex: 1" :disabled="refreshing || S.apiMode !== 'multi'" @click="refreshNow">
-            <KpIcon :i="refreshing ? 'loader' : 'refresh'" :class="{ 'kp-spin': refreshing }" />
-            用此模板试运行
-          </button>
-        </div>
-      </div>
-
-      <div class="kp-set-section">
-        <div class="kp-set-title"><KpIcon i="filter" /> 生成范围</div>
+        <div class="kp-set-title"><KpIcon i="pen" /> 生成范围</div>
         <p class="kp-set-desc">控制每次刷新生成哪些板块 (关闭的板块不生成也不覆盖现有内容)。</p>
         <div class="kp-gen-row">
           <button class="kp-gen-item" :class="{ 'kp-on': S.generation.forum }" @click="S.generation.forum = !S.generation.forum">
@@ -373,6 +368,31 @@ function reinstallInjection() {
           <span class="kp-set-label">回帖实时回复<small>论坛里回帖后, 第二 API 生成其他用户的回应</small></span>
           <button class="kp-switch" :class="{ 'kp-on': S.forumLiveReply }" @click="S.forumLiveReply = !S.forumLiveReply"></button>
         </div>
+      </div>
+
+      <div class="kp-set-section">
+        <div class="kp-set-title">
+          <KpIcon i="pen" /> 提示词中心
+          <span class="kp-chip" style="margin-left: auto">共 {{ promptTotal }} 字</span>
+        </div>
+        <p class="kp-set-desc">
+          每条提示词都完整展示、单独编辑、单独恢复默认。输出 JSON 格式为固定规范, 无需配置。
+          组装顺序: 前置文本 → 公共设定 → 启用板块要求 → 固定格式 → 剧情摘要 → 世界书。
+        </p>
+        <details v-for="f in PROMPT_FIELDS" :key="f.key" class="kp-pset">
+          <summary>
+            <span class="kp-pset-name">{{ f.label }}</span>
+            <span class="kp-pset-len">{{ (S.prompts[f.key] || '').length }} 字</span>
+            <button class="kp-pset-reset" title="恢复此条默认" @click.stop="resetPromptField(f.key)">
+              <KpIcon i="refresh" :size="11" />
+            </button>
+          </summary>
+          <p class="kp-set-desc" style="margin: 6px 0">{{ f.desc }}</p>
+          <textarea v-model="S.prompts[f.key]" class="kp-prompt-editor" :rows="f.rows" spellcheck="false"></textarea>
+        </details>
+        <button class="kp-btn kp-ghost" style="width: 100%; margin-top: 8px" @click="resetPrompt">
+          <KpIcon i="refresh" /> 全部恢复默认
+        </button>
       </div>
     </template>
 
