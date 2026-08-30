@@ -1,21 +1,36 @@
 ========================================
- 卡塞尔学院手机 · 酒馆安装三步
+ 卡塞尔学院手机 · 酒馆助手安装步骤
 ========================================
 
-【第一步】把本项目推送到 GitHub（见 README.md「发布到 GitHub」），得到 CDN 地址：
+【重要】酒馆助手「脚本」里写的是纯 JavaScript 代码——
+酒馆助手会把脚本内容包进 <script type="module"> 在隐藏 iframe 中执行
+(同源, 可通过 window.parent 操作酒馆主页面, TavernHelper 函数全部全局可用)。
+不要粘贴 <script src="..."> 这种 HTML 标签, 那样会直接语法报错!
 
-  https://cdn.jsdelivr.net/gh/<你的用户名>/<仓库名>@main/dist/kassel-phone.js
+【第一步】打开酒馆 (SillyTavern) → 扩展 → 酒馆助手 (JS-Slash-Runner) → 脚本库
 
-【第二步】酒馆 → 扩展 → 酒馆助手 → 脚本库 → 新建脚本
-  保存以下内容（替换 <你的用户名>/<仓库名>）：
+【第二步】新建脚本 (名称随意, 如「卡塞尔学院手机」), 粘贴以下内容并保存启用:
 
-  <script src="https://cdn.jsdelivr.net/gh/<你的用户名>/<仓库名>@main/dist/kassel-phone.js"></script>
+  import('https://cdn.jsdelivr.net/gh/anaka123987-cmd/kassel-phone@main/dist/kassel-phone.js');
 
-【第三步】启用脚本，右下角出现金色龙徽悬浮按钮即成功。
-  点击展开手机；长按/拖拽可移动按钮位置。
+  可选: 带加载失败提示的版本 (网络不好时能看到报错):
 
-提示：
-  · 推送后 jsDelivr 有缓存，更新代码后建议打 tag（如 @v1.0.1）或去
-    https://www.jsdelivr.com/tools/purge 清缓存。
-  · 也可以用 GitHub Pages：
-    https://<你的用户名>.github.io/<仓库名>/dist/kassel-phone.js
+  import('https://cdn.jsdelivr.net/gh/anaka123987-cmd/kassel-phone@main/dist/kassel-phone.js')
+    .catch((e) => {
+      console.error('[卡塞尔手机] 加载失败:', e);
+      try { toastr.error('卡塞尔手机加载失败, 请检查网络后重试', '酒馆助手'); } catch (_) {}
+    });
+
+【第三步】加载成功后, 酒馆页面右下角出现金色龙徽悬浮按钮。
+  单击展开手机面板; 按住拖动可移动; 面板展开后可拖状态栏移动窗口, Esc 或「—」收起。
+
+【首次配置】手机 → 设置 → API:
+  · 选「多 API」并填写第二 API (URL / Key / 模型名), 用于生成论坛/私信/资讯
+  · 不填也能用 (内置静态内容兜底 + 演示数据)
+
+【更新版本】
+  · jsDelivr 对 @main 有缓存 (最长约 12 小时), 急用可固定版本号:
+      import('https://cdn.jsdelivr.net/gh/anaka123987-cmd/kassel-phone@v1.4.1/dist/kassel-phone.js');
+  · 或去 https://www.jsdelivr.com/tools/purge 清缓存
+
+【卸载】在脚本库里停用或删除该脚本即可, 注入的界面会随脚本关闭自动清理。

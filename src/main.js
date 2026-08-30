@@ -24,6 +24,16 @@ function boot() {
   env.detect();
   const doc = hostDocument();
 
+  // 酒馆助手脚本停用/酒馆刷新时, 脚本 iframe 被销毁, 随之清掉注入到宿主页的元素
+  // (酒馆助手约定: 脚本内监听 pagehide 做关停清理)
+  window.addEventListener('pagehide', () => {
+    try {
+      for (const id of [CONTAINER_ID, STYLE_ID, 'kassel-phone-custom']) {
+        doc.getElementById(id)?.remove();
+      }
+    } catch (e) { /* noop */ }
+  });
+
   injectStyle(doc);
 
   // 防重复实例 (脚本重载时移除旧容器)

@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import path from 'node:path';
 
-// 构建目标: 单文件 IIFE (Vue 内联), 供酒馆助手脚本通过 <script src> 一行引用
+// 构建目标: 单文件 IIFE (Vue 内联), 供酒馆助手脚本通过 import('https://…') 动态加载
 export default defineConfig({
   plugins: [vue()],
   define: {

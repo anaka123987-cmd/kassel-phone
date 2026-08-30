@@ -37,13 +37,21 @@
 ## 安装（酒馆）
 
 1. 确保已安装 [酒馆助手 (JS-Slash-Runner)](https://github.com/n0vi028/JS-Slash-Runner) 与 MVU 变量框架（可选）
-2. 酒馆助手 → 脚本库 → 新建脚本，内容一行（替换为你的 CDN 地址）：
+2. 酒馆助手 → 脚本库 → 新建脚本，粘贴以下内容并保存启用：
 
-```html
-<script src="https://cdn.jsdelivr.net/gh/<你的用户名>/<仓库名>@main/dist/kassel-phone.js"></script>
+> **注意**：酒馆助手「脚本」的内容是**纯 JavaScript**（会被包进 `<script type="module">`
+> 在隐藏 iframe 中执行，TavernHelper 函数全局可用、可同源操作酒馆主页面）。
+> 不要粘贴 `<script src>` 这种 HTML 标签。
+
+```js
+import('https://cdn.jsdelivr.net/gh/anaka123987-cmd/kassel-phone@main/dist/kassel-phone.js');
 ```
 
-3. 保存并启用脚本，右下角出现龙徽按钮即成功。
+3. 右下角出现金色龙徽悬浮按钮即成功；首次使用到 设置 → API 配置第二 API。
+4. 停用/删除脚本即卸载，注入的界面会随脚本关闭自动清理（组件监听了 `pagehide`）。
+
+> 更新：jsDelivr 对 `@main` 有约 12 小时缓存，急用可固定版本号 `@v1.4.1` 或
+> 去 [purge 工具](https://www.jsdelivr.com/tools/purge) 清缓存。
 
 ## 发布到 GitHub（维护者）
 
@@ -110,5 +118,5 @@ kassel-phone/
 │  ├─ components/            FloatingButton / PhonePanel / SettingsView
 │  ├─ apps/                  Forum / Message / Profile / News
 │  └─ services/              tavern / mvu / extractor / secondApi / pipeline / storage
-└─ 酒馆脚本-安装.txt           一行脚本模板
+└─ 酒馆脚本-安装.txt           脚本库安装说明 (纯 JS import 一行)
 ```
