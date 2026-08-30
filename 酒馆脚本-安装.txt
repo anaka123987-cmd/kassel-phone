@@ -30,7 +30,7 @@
 
 【更新版本】
   · jsDelivr 对 @main 有缓存 (最长约 12 小时), 急用可固定版本号:
-      import('https://cdn.jsdelivr.net/gh/anaka123987-cmd/kassel-phone@v1.4.1/dist/kassel-phone.js');
+      import('https://cdn.jsdelivr.net/gh/anaka123987-cmd/kassel-phone@v1.5.0/dist/kassel-phone.js');
   · 或去 https://www.jsdelivr.com/tools/purge 清缓存
 
 【卸载】在脚本库里停用或删除该脚本即可, 注入的界面会随脚本关闭自动清理。

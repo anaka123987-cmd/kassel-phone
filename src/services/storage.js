@@ -40,6 +40,9 @@ export const DEFAULT_SETTINGS = {
   /** 外观 */
   accent: 'bronze',
   customCss: '',
+  /** 壁纸: url 非空时优先 (图床直链); 否则用 id 对应的内置渐变壁纸 */
+  wallpaperUrl: '',
+  wallpaperId: 'bronze',
   /** 提示词中心 (全部完整可编辑, 默认值即完整文案) */
   prompts: { ...DEFAULT_PROMPTS },
   /** 世界书最大注入字符数 (0 = 不限) */

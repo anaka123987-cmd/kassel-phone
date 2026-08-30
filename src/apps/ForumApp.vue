@@ -4,7 +4,7 @@
  */
 import { ref, computed } from 'vue';
 import KpIcon from '../components/KpIcon.vue';
-import { store, isPostLiked, toggleLikePost, persistContent, showToast } from '../store.js';
+import { store, isPostLiked, toggleLikePost, persistContent, showToast, goHome } from '../store.js';
 import { refreshPhoneContent } from '../services/pipeline.js';
 import { isMultiApi } from '../store.js';
 import { callSecondApiForForumReply } from '../services/secondApi.js';
@@ -148,7 +148,8 @@ async function refresh() {
   <!-- 帖子列表 -->
   <template v-else>
     <div class="kp-app-header">
-      <div>
+      <button class="kp-iconbtn" title="返回桌面" @click="goHome"><KpIcon i="arrow-left" /></button>
+      <div class="kp-head-main">
         <div class="kp-app-title">守夜人<span class="kp-gold">论坛</span></div>
         <div class="kp-app-sub">Night Watchmen BBS</div>
       </div>

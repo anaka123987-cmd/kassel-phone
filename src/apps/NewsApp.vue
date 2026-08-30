@@ -4,7 +4,7 @@
  */
 import { ref, computed } from 'vue';
 import KpIcon from '../components/KpIcon.vue';
-import { store } from '../store.js';
+import { store, goHome } from '../store.js';
 
 const expandedId = ref(null);
 
@@ -24,7 +24,8 @@ function toggle(item) {
 
 <template>
   <div class="kp-app-header">
-    <div>
+    <button class="kp-iconbtn" title="返回桌面" @click="goHome"><KpIcon i="arrow-left" /></button>
+    <div class="kp-head-main">
       <div class="kp-app-title">校园<span class="kp-gold">资讯</span></div>
       <div class="kp-app-sub">Campus News</div>
     </div>

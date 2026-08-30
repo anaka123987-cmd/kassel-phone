@@ -29,16 +29,18 @@
   color: var(--kp-text);
 }
 
-#kassel-phone-root *,
-#kassel-phone-root *::before,
-#kassel-phone-root *::after {
+/* 重置必须用 :where() 归零特异性: 否则 ID 选择器 (1,0,0) 会压过
+   后面所有单类规则的 padding/margin, 导致整个 UI 贴边挤压 */
+:where(#kassel-phone-root) *,
+:where(#kassel-phone-root) *::before,
+:where(#kassel-phone-root) *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
   font-family: inherit;
 }
 
-#kassel-phone-root button {
+:where(#kassel-phone-root) button {
   border: none;
   background: none;
   color: inherit;
@@ -48,9 +50,9 @@
   user-select: none;
 }
 
-#kassel-phone-root input,
-#kassel-phone-root textarea,
-#kassel-phone-root select {
+:where(#kassel-phone-root) input,
+:where(#kassel-phone-root) textarea,
+:where(#kassel-phone-root) select {
   font: inherit;
   color: var(--kp-text);
   background: rgba(255, 255, 255, 0.04);
@@ -62,14 +64,14 @@
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-#kassel-phone-root input:focus,
-#kassel-phone-root textarea:focus,
-#kassel-phone-root select:focus {
+:where(#kassel-phone-root) input:focus,
+:where(#kassel-phone-root) textarea:focus,
+:where(#kassel-phone-root) select:focus {
   border-color: var(--kp-gold);
   box-shadow: 0 0 0 2px rgba(201, 168, 106, 0.18);
 }
 
-#kassel-phone-root input[type='checkbox'] {
+:where(#kassel-phone-root) input[type='checkbox'] {
   width: 16px;
   height: 16px;
   accent-color: var(--kp-gold);
@@ -77,17 +79,17 @@
   flex: none;
 }
 
-#kassel-phone-root ::-webkit-scrollbar {
+:where(#kassel-phone-root) ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 
-#kassel-phone-root ::-webkit-scrollbar-thumb {
+:where(#kassel-phone-root) ::-webkit-scrollbar-thumb {
   background: rgba(201, 168, 106, 0.3);
   border-radius: 3px;
 }
 
-#kassel-phone-root ::-webkit-scrollbar-track {
+:where(#kassel-phone-root) ::-webkit-scrollbar-track {
   background: transparent;
 }
 
@@ -176,7 +178,7 @@
   50% { box-shadow: 0 6px 22px rgba(0, 0, 0, 0.55), inset 0 0 14px rgba(201, 168, 106, 0.14), 0 0 16px rgba(201, 168, 106, 0.28); }
 }
 
-/* ---------------- 手机面板 ---------------- */
+/* ---------------- 手机面板 (真机外壳: 金属边框 + 挖孔屏) ---------------- */
 
 .kp-phone {
   position: fixed;
@@ -185,20 +187,92 @@
   height: min(640px, 92vh);
   max-height: 92vh;
   border-radius: 42px;
+  padding: 8px; /* 金属边框厚度 */
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  background:
-    radial-gradient(120% 90% at 85% -10%, rgba(127, 184, 216, 0.12), transparent 55%),
-    radial-gradient(120% 90% at 0% 110%, rgba(201, 168, 106, 0.1), transparent 55%),
-    linear-gradient(165deg, #10182b, #0a0f1d 55%, #0d1526);
-  border: 1.5px solid rgba(201, 168, 106, 0.4);
+  background: linear-gradient(160deg, #2a2f3a, #14171e 40%, #0b0d12);
+  border: 1px solid rgba(201, 168, 106, 0.35);
   box-shadow:
     0 24px 60px rgba(0, 0, 0, 0.7),
-    0 0 0 4px rgba(10, 15, 29, 0.85),
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.06),
     0 0 30px rgba(201, 168, 106, 0.12);
   transform-origin: center;
 }
+
+/* 屏幕: 边框内的可视区 */
+.kp-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 34px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(165deg, #10182b, #0a0f1d 55%, #0d1526);
+  isolation: isolate;
+}
+
+/* 前摄挖孔 (装饰) */
+.kp-cam {
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #1c2438, #05070c 70%);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  z-index: 40;
+  pointer-events: none;
+}
+
+/* 壁纸层: URL 直接内联覆盖, 否则用 .kp-wp-* 内置渐变 */
+.kp-wallpaper {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+}
+
+:root {
+  --kp-wp-bronze:
+    repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.022) 0 2px, transparent 2px 9px),
+    radial-gradient(140% 100% at 82% 0%, rgba(201, 168, 106, 0.3), transparent 52%),
+    radial-gradient(120% 90% at 0% 100%, rgba(70, 92, 130, 0.35), transparent 55%),
+    linear-gradient(160deg, #1a2236, #0d1322 55%, #171325);
+  --kp-wp-dragonfire:
+    radial-gradient(130% 90% at 85% 8%, rgba(216, 110, 80, 0.42), transparent 55%),
+    radial-gradient(120% 80% at 0% 100%, rgba(140, 60, 40, 0.35), transparent 55%),
+    linear-gradient(165deg, #2a1215, #160a0e 55%, #231014);
+  --kp-wp-night:
+    radial-gradient(130% 90% at 70% 0%, rgba(96, 118, 208, 0.28), transparent 55%),
+    radial-gradient(100% 70% at 10% 90%, rgba(60, 70, 140, 0.25), transparent 55%),
+    linear-gradient(170deg, #0b1024, #05070f 60%, #0a0d1c);
+  --kp-wp-ice:
+    radial-gradient(130% 90% at 20% 0%, rgba(127, 184, 216, 0.32), transparent 55%),
+    radial-gradient(120% 80% at 90% 100%, rgba(80, 130, 170, 0.25), transparent 55%),
+    linear-gradient(160deg, #12222e, #0a141d 55%, #101d29);
+  --kp-wp-dusk:
+    radial-gradient(130% 90% at 80% 0%, rgba(176, 143, 216, 0.34), transparent 55%),
+    radial-gradient(110% 80% at 0% 100%, rgba(120, 80, 160, 0.22), transparent 55%),
+    linear-gradient(165deg, #1c1530, #0e0a1c 55%, #171126);
+}
+
+.kp-screen.kp-wp-bronze .kp-wallpaper,
+.kp-wp-thumb.kp-wp-bronze { background-image: var(--kp-wp-bronze); }
+
+.kp-screen.kp-wp-dragonfire .kp-wallpaper,
+.kp-wp-thumb.kp-wp-dragonfire { background-image: var(--kp-wp-dragonfire); }
+
+.kp-screen.kp-wp-night .kp-wallpaper,
+.kp-wp-thumb.kp-wp-night { background-image: var(--kp-wp-night); }
+
+.kp-screen.kp-wp-ice .kp-wallpaper,
+.kp-wp-thumb.kp-wp-ice { background-image: var(--kp-wp-ice); }
+
+.kp-screen.kp-wp-dusk .kp-wallpaper,
+.kp-wp-thumb.kp-wp-dusk { background-image: var(--kp-wp-dusk); }
 
 .kp-phone-anim-in {
   animation: kp-phone-in 0.32s cubic-bezier(0.22, 1.1, 0.36, 1) both;
@@ -218,19 +292,28 @@
   to { opacity: 0; transform: scale(0.2); }
 }
 
-/* 顶部状态栏 */
+/* 顶部状态栏 (悬浮于壁纸上, 可按住拖动手机窗口) */
 .kp-statusbar {
   flex: none;
+  position: relative;
+  z-index: 10;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 14px 18px 8px;
+  padding: 9px 14px 4px 22px;
   font-size: 11px;
-  color: var(--kp-text-dim);
+  color: rgba(255, 255, 255, 0.82);
+  cursor: grab;
+  touch-action: none;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.kp-statusbar:active {
+  cursor: grabbing;
 }
 
 .kp-statusbar .kp-sb-time {
-  color: var(--kp-gold-bright);
+  color: #fff;
   font-weight: 600;
   letter-spacing: 0.5px;
 }
@@ -242,8 +325,8 @@
 .kp-statusbar .kp-sb-right {
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: var(--kp-text-faint);
+  gap: 7px;
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .kp-sb-dot {
@@ -266,9 +349,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--kp-text-dim);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   transition: all 0.18s ease;
   flex: none;
 }
@@ -276,23 +359,32 @@
 .kp-minbtn:hover {
   color: var(--kp-gold-bright);
   border-color: rgba(201, 168, 106, 0.4);
-  background: rgba(201, 168, 106, 0.08);
+  background: rgba(201, 168, 106, 0.1);
 }
 
-/* 内容区 */
-.kp-content {
+/* 舞台: 桌面 / 应用 / 锁屏 共同容器 */
+.kp-stage {
   flex: 1;
   min-height: 0;
   position: relative;
-  overflow: hidden;
+  z-index: 1;
+}
+
+.kp-fill {
+  position: absolute;
+  inset: 0;
 }
 
 .kp-view {
-  position: absolute;
-  inset: 0;
   display: flex;
   flex-direction: column;
   animation: kp-view-in 0.24s ease both;
+}
+
+/* 应用界面: 半透明深色表面, 压住壁纸保证可读 */
+.kp-appscreen {
+  background: linear-gradient(165deg, rgba(14, 21, 38, 0.97), rgba(10, 15, 29, 0.98));
+  backdrop-filter: blur(8px);
 }
 
 @keyframes kp-view-in {
@@ -300,53 +392,258 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* 底部 tab 栏 */
-.kp-tabbar {
-  flex: none;
-  display: flex;
-  align-items: stretch;
-  padding: 6px 10px calc(10px + env(safe-area-inset-bottom, 0px));
-  gap: 2px;
-  background: linear-gradient(to top, rgba(7, 11, 20, 0.95), rgba(7, 11, 20, 0.6));
-  border-top: 1px solid var(--kp-line-soft);
+/* 桌面转场 (锁屏→桌面 / 桌面→应用由 kp-view-in 处理) */
+.kp-scr-enter-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
 }
 
-.kp-tab {
-  flex: 1;
+.kp-scr-leave-active {
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.kp-scr-enter-from {
+  opacity: 0;
+  transform: scale(1.05);
+}
+
+.kp-scr-leave-to {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+/* ---------------- 手机桌面 (HomeScreen) ---------------- */
+
+.kp-home {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 14px 28px;
+}
+
+.kp-home-clock {
+  margin: 16px 6px 0;
+  color: #fff;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.55);
+}
+
+.kp-home-time {
+  font-size: 38px;
+  font-weight: 200;
+  letter-spacing: 1px;
+  line-height: 1.15;
+}
+
+.kp-home-date {
+  font-size: 12px;
+  opacity: 0.88;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.kp-home-loc {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 6px;
+  color: var(--kp-gold-bright);
+  font-size: 11px;
+}
+
+.kp-home-grid {
+  margin-top: 30px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px 6px;
+}
+
+.kp-appitem {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 6px 0 4px;
-  border-radius: 12px;
-  color: var(--kp-text-faint);
-  font-size: 10px;
-  transition: color 0.18s ease, background 0.18s ease;
+  gap: 6px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.kp-appicon {
   position: relative;
-}
-
-.kp-tab i {
-  font-size: 17px;
-}
-
-.kp-tab.kp-active {
-  color: var(--kp-gold-bright);
-  background: rgba(201, 168, 106, 0.1);
-}
-
-.kp-tab-badge {
-  position: absolute;
-  top: 2px;
-  right: calc(50% - 18px);
-  min-width: 15px;
-  height: 15px;
-  padding: 0 4px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #d9788a, #b04a60);
+  width: 54px;
+  height: 54px;
+  border-radius: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: #fff;
-  font-size: 9px;
-  line-height: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 6px 14px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transition: transform 0.15s ease;
+}
+
+.kp-appitem:hover .kp-appicon {
+  transform: translateY(-2px);
+}
+
+.kp-appitem:active .kp-appicon {
+  transform: scale(0.92);
+}
+
+.kp-appicon-forum {
+  background: linear-gradient(145deg, #d4b47a, #8a6a35);
+}
+
+.kp-appicon-messages {
+  background: linear-gradient(145deg, #86d8ab, #3f8f66);
+}
+
+.kp-appicon-profile {
+  background: linear-gradient(145deg, #b99ada, #6a4a9f);
+}
+
+.kp-appicon-news {
+  background: linear-gradient(145deg, #e39781, #b0523d);
+}
+
+.kp-appicon-settings {
+  background: linear-gradient(145deg, #94a1b8, #4a5568);
+}
+
+.kp-appbadge {
+  position: absolute;
+  top: -5px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #e05a72, #a83a52);
+  color: #fff;
+  font-size: 10px;
+  line-height: 18px;
   text-align: center;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.kp-applabel {
+  font-size: 11px;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.65);
+  white-space: nowrap;
+}
+
+.kp-home-brand {
+  margin-top: auto;
+  text-align: center;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: rgba(255, 255, 255, 0.42);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* ---------------- 锁屏 ---------------- */
+
+.kp-lock {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  background: rgba(4, 6, 12, 0.22);
+  user-select: none;
+}
+
+.kp-lock-clock {
+  margin-top: 86px;
+  font-size: 54px;
+  font-weight: 100;
+  color: #fff;
+  letter-spacing: 2px;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.55);
+}
+
+.kp-lock-date {
+  margin-top: 8px;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: rgba(255, 255, 255, 0.75);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+}
+
+.kp-lock-hint {
+  margin-top: auto;
+  margin-bottom: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.72);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+  animation: kp-float 2.2s ease-in-out infinite;
+}
+
+@keyframes kp-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* 解锁: 锁屏整体上滑退场 */
+.kp-lock-leave-active {
+  transition: transform 0.35s cubic-bezier(0.3, 0.9, 0.3, 1), opacity 0.3s ease;
+}
+
+.kp-lock-leave-to {
+  transform: translateY(-100%);
+  opacity: 0.55;
+}
+
+.kp-lock-enter-active {
+  transition: opacity 0.2s ease;
+}
+
+.kp-lock-enter-from {
+  opacity: 0;
+}
+
+/* ---------------- 底部 Home 条 ---------------- */
+
+.kp-homebar {
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  width: 110px;
+  height: 20px;
+  background: none;
+  border: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 0 3px;
+  cursor: pointer;
+}
+
+.kp-homebar-pill {
+  width: 100px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.5);
+  transition: background 0.2s ease;
+}
+
+.kp-homebar:hover .kp-homebar-pill {
+  background: rgba(255, 255, 255, 0.85);
 }
 
 /* ---------------- 通用组件 ---------------- */
@@ -694,14 +991,43 @@
 /* ================ 组件样式 (由 SFC <style> 合并) ================ */
 
 /* ---- src/components/PhonePanel.vue ---- */
-.kp-sb-loc {
-  color: var(--kp-ice-soft);
-  font-size: 11px;
-}
-
 .kp-sb-spinning {
   animation: kp-rotate 1.2s linear infinite;
   color: var(--kp-gold-bright);
+}
+
+/* ---- src/components/HomeScreen.vue / 应用头部 ---- */
+.kp-head-main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---- src/components/SettingsView.vue (壁纸) ---- */
+.kp-wallpaper-row {
+  align-items: center;
+}
+
+.kp-wallpaper-btns {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.kp-wp-swatch {
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 2px;
+}
+
+.kp-wp-thumb {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
 }
 
 /* ---- src/apps/ForumApp.vue ---- */
@@ -1309,7 +1635,6 @@
 }
 
 .kp-app-header .kp-ico { width: 16px; height: 16px; }
-.kp-tab .kp-ico { width: 18px; height: 18px; }
 .kp-set-tab .kp-ico { width: 13px; height: 13px; }
 .kp-mode-btn .kp-ico { width: 20px; height: 20px; }
 .kp-empty .kp-ico { width: 28px; height: 28px; display: block; margin: 0 auto 8px; color: rgba(201, 168, 106, 0.4); }
@@ -1319,31 +1644,12 @@
 .kp-like.kp-liked .kp-ico { fill: currentColor; }
 .kp-post-foot .kp-ico { width: 12px; height: 12px; vertical-align: -2px; }
 .kp-chip .kp-ico { width: 10px; height: 10px; }
-.kp-sb-loc { width: 12px; height: 12px; color: var(--kp-ice-soft); }
 
 /* 点赞态强调 */
 .kp-like.kp-liked {
   color: #eba4b2;
   background: rgba(217, 120, 138, 0.16);
   border-color: rgba(217, 120, 138, 0.45);
-}
-
-/* ---- 手机壳: 龙鳞纹理背景 ---- */
-.kp-phone {
-  position: fixed;
-}
-.kp-phone::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(rgba(201, 168, 106, 0.045) 1px, transparent 1.4px);
-  background-size: 16px 16px;
-  pointer-events: none;
-  z-index: 0;
-}
-.kp-statusbar, .kp-content, .kp-tabbar {
-  position: relative;
-  z-index: 1;
 }
 
 /* 状态栏时间: 鎏金渐变字 */
@@ -1353,15 +1659,6 @@
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-}
-
-/* tab 激活辉光 */
-.kp-tab.kp-active .kp-ico {
-  filter: drop-shadow(0 0 6px rgba(201, 168, 106, 0.55));
-}
-.kp-tab.kp-active {
-  background: linear-gradient(160deg, rgba(201, 168, 106, 0.16), rgba(201, 168, 106, 0.05));
-  border: 1px solid rgba(201, 168, 106, 0.18);
 }
 
 /* 卡片悬停微抬升 */

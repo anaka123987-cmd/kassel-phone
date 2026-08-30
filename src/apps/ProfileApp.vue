@@ -5,7 +5,7 @@
  */
 import { computed } from 'vue';
 import KpIcon from '../components/KpIcon.vue';
-import { store } from '../store.js';
+import { store, goHome } from '../store.js';
 import { BUILTIN_PROFILE } from '../data/builtin.js';
 
 const profile = computed(() => ({
@@ -41,7 +41,8 @@ function bloodColor(text) {
 
 <template>
   <div class="kp-app-header">
-    <div>
+    <button class="kp-iconbtn" title="返回桌面" @click="goHome"><KpIcon i="arrow-left" /></button>
+    <div class="kp-head-main">
       <div class="kp-app-title">学籍<span class="kp-gold">卡</span></div>
       <div class="kp-app-sub">Student ID Card</div>
     </div>

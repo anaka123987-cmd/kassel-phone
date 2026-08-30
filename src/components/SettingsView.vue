@@ -5,7 +5,7 @@
  */
 import { ref, computed } from 'vue';
 import KpIcon from './KpIcon.vue';
-import { store, log, showToast, saveSettingsToStorage } from '../store.js';
+import { store, log, showToast, saveSettingsToStorage, goHome } from '../store.js';
 import { getBoundWorldbooksSafe, tavernAvailable } from '../services/tavern.js';
 import { refreshPhoneContent } from '../services/pipeline.js';
 import { syncPhoneInjection, installDisplayRegex } from '../services/injector.js';
@@ -32,6 +32,38 @@ const ACCENTS = [
   { id: 'ice', label: '冰海蓝', color: '#7fb8d8' },
   { id: 'violet', label: '黄昏紫', color: '#b08fd8' },
 ];
+
+/* -------- 壁纸 (图床 URL 优先, 否则内置渐变) -------- */
+const WALLPAPERS = [
+  { id: 'bronze', label: '青铜暗纹' },
+  { id: 'dragonfire', label: '龙炎' },
+  { id: 'night', label: '夜幕' },
+  { id: 'ice', label: '冰海' },
+  { id: 'dusk', label: '黄昏' },
+];
+const wallUrlInput = ref('');
+const usingUrlWallpaper = computed(() => !!(S.wallpaperUrl || '').trim());
+
+function pickWallpaper(id) {
+  S.wallpaperUrl = '';
+  wallUrlInput.value = '';
+  S.wallpaperId = id;
+}
+
+function applyWallpaperUrl() {
+  const url = wallUrlInput.value.trim();
+  if (!url) {
+    showToast('请先粘贴壁纸图片的直链 URL');
+    return;
+  }
+  S.wallpaperUrl = url;
+  showToast('壁纸已更新');
+}
+
+function clearWallpaperUrl() {
+  S.wallpaperUrl = '';
+  wallUrlInput.value = '';
+}
 
 /* -------- 提示词中心: 每个提示词完整可编辑, 单独恢复默认 -------- */
 // [key, 标题, 说明, 行数]
@@ -147,7 +179,8 @@ function reinstallInjection() {
 
 <template>
   <div class="kp-app-header">
-    <div>
+    <button class="kp-iconbtn" title="返回桌面" @click="goHome"><KpIcon i="arrow-left" /></button>
+    <div class="kp-head-main">
       <div class="kp-app-title">设置<span class="kp-gold">中心</span></div>
       <div class="kp-app-sub">Settings</div>
     </div>
@@ -410,6 +443,34 @@ function reinstallInjection() {
           >
             <span class="kp-accent-dot" :style="{ background: a.color }"></span>
             <small>{{ a.label }}</small>
+          </button>
+        </div>
+      </div>
+      <div class="kp-set-section">
+        <div class="kp-set-title"><KpIcon i="image" /> 壁纸</div>
+        <p class="kp-set-desc">填入任意图床的图片直链作为手机壁纸 (留空使用内置壁纸)。</p>
+        <div class="kp-set-row kp-wallpaper-row">
+          <input
+            v-model="wallUrlInput"
+            type="text"
+            placeholder="https://图床地址/壁纸.jpg"
+            spellcheck="false"
+          />
+        </div>
+        <div class="kp-wallpaper-btns">
+          <button class="kp-btn" @click="applyWallpaperUrl"><KpIcon i="check" :size="13" /> 使用此壁纸</button>
+          <button class="kp-btn kp-ghost" :disabled="!usingUrlWallpaper" @click="clearWallpaperUrl">清除 URL</button>
+        </div>
+        <div class="kp-accent-row" style="margin-top: 10px">
+          <button
+            v-for="w in WALLPAPERS"
+            :key="w.id"
+            class="kp-accent kp-wp-swatch"
+            :class="{ 'kp-accent-on': !usingUrlWallpaper && S.wallpaperId === w.id }"
+            @click="pickWallpaper(w.id)"
+          >
+            <span class="kp-accent-dot kp-wp-thumb" :class="`kp-wp-${w.id}`"></span>
+            <small>{{ w.label }}</small>
           </button>
         </div>
       </div>

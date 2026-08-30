@@ -13,7 +13,8 @@ export const store = reactive({
   ready: false,
   /** 悬浮面板状态 */
   expanded: false,
-  activeTab: 'forum',
+  /** 手机当前界面: 'lock' 锁屏 | 'home' 桌面 | 应用 id (forum/messages/profile/news/settings) */
+  screen: 'lock',
   /** 悬浮按钮实时位置 (视口坐标), 供面板锚定展开方向 */
   fabPos: { x: 0, y: 0 },
 
@@ -45,6 +46,16 @@ export const store = reactive({
 });
 
 /* ---------------- 工具 ---------------- */
+
+/** 打开应用 (从桌面图标) */
+export function openApp(id) {
+  store.screen = id;
+}
+
+/** 返回桌面 */
+export function goHome() {
+  store.screen = 'home';
+}
 
 export function log(msg) {
   const line = `[${new Date().toLocaleTimeString('zh-CN', { hour12: false })}] ${msg}`;

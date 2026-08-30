@@ -1,13 +1,14 @@
 <script setup>
 /**
- * 手机面板外壳: 320 × min(640px, 92vh), 圆角 42px
+ * 手机外壳 (真机样式): 深色金属边框 + 前摄挖孔 + 屏幕
+ * - 屏幕 = 壁纸层 + 状态栏 (可拖动手机窗口) + 舞台 (锁屏/桌面/应用) + 底部 Home 条
+ * - 界面状态机: store.screen = 'lock' | 'home' | 应用 id
+ * - 每次展开手机从锁屏开始; Esc: 应用→桌面, 桌面/锁屏→收起
  * - 从悬浮按钮位置以 scale + opacity 动画展开, 最小化时反向收回
- * - 顶部状态栏: 时间 (MVU 日期时间优先) / 地点 / 连接状态 / 最小化按钮
- * - 底部 tab: 论坛 / 私信 / 学籍 / 资讯 / 设置
  */
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import KpIcon from './KpIcon.vue';
-import { store, unreadTotal } from '../store.js';
+import { store } from '../store.js';
 import { hostWindow, hostDocument } from '../env.js';
 import { tavernAvailable } from '../services/tavern.js';
 import ForumApp from '../apps/ForumApp.vue';
@@ -15,16 +16,15 @@ import MessageApp from '../apps/MessageApp.vue';
 import ProfileApp from '../apps/ProfileApp.vue';
 import NewsApp from '../apps/NewsApp.vue';
 import SettingsView from '../components/SettingsView.vue';
+import HomeScreen from '../components/HomeScreen.vue';
 
 const VIEWS = {
-  forum: { comp: ForumApp, icon: 'forum', label: '论坛' },
-  messages: { comp: MessageApp, icon: 'send', label: '私信' },
-  profile: { comp: ProfileApp, icon: 'id-card', label: '学籍' },
-  news: { comp: NewsApp, icon: 'megaphone', label: '资讯' },
-  settings: { comp: SettingsView, icon: 'cog', label: '设置' },
+  forum: { comp: ForumApp, label: '守夜人论坛' },
+  messages: { comp: MessageApp, label: '私信' },
+  profile: { comp: ProfileApp, label: '学籍卡' },
+  news: { comp: NewsApp, label: '校园资讯' },
+  settings: { comp: SettingsView, label: '设置' },
 };
-
-const tabs = Object.keys(VIEWS);
 
 const resizeTick = ref(0);
 const now = ref(new Date());
@@ -76,7 +76,26 @@ const clockText = computed(() => {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 });
 
-const displayTime = computed(() => store.mvu?.datetime || clockText.value);
+const isApp = computed(() => !!VIEWS[store.screen]);
+
+/* ---------------- 壁纸: 图床 URL 优先, 否则内置预设 ---------------- */
+
+const wallStyle = computed(() => {
+  const url = (store.settings.wallpaperUrl || '').trim();
+  if (!url) return null;
+  // 暗色遮罩压住壁纸, 保证状态栏/图标可读
+  return {
+    backgroundImage: `linear-gradient(rgba(8,10,18,.42), rgba(8,10,18,.55)), url("${url}")`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+  };
+});
+
+const wallPresetClass = computed(() => {
+  const url = (store.settings.wallpaperUrl || '').trim();
+  if (url) return '';
+  return `kp-wp-${store.settings.wallpaperId || 'bronze'}`;
+});
 
 /* ---------------- 面板拖动 (拖状态栏移动手机窗口) ---------------- */
 
@@ -129,8 +148,27 @@ function onStatusbarUp(e) {
   el.removeEventListener('pointercancel', onStatusbarUp);
 }
 
+/* ---------------- 界面切换 ---------------- */
+
+// 锁屏显示时刻: 用于忽略展开瞬间穿透过来的同一次点击
+let lockShownAt = 0;
+
+function armLock() {
+  lockShownAt = Date.now();
+}
+
+function unlock() {
+  if (Date.now() - lockShownAt < 350) return;
+  store.screen = 'home';
+}
+
 function onKey(e) {
-  if (e.key === 'Escape' && store.expanded) store.expanded = false;
+  if (e.key !== 'Escape' || !store.expanded) return;
+  if (store.screen !== 'home' && store.screen !== 'lock') {
+    store.screen = 'home'; // 应用 → 桌面
+  } else {
+    minimize(); // 桌面/锁屏 → 收起
+  }
 }
 
 function onResize() {
@@ -141,20 +179,26 @@ function onResize() {
   }
 }
 
-// 每次展开都强制按当前视口重算锚点 (视口可能在面板收起期间变化过)
-watch(
-  () => store.expanded,
-  (v) => {
-    if (v) onResize();
-  },
-);
-
 function minimize() {
   store.expanded = false;
+  store.screen = 'lock'; // 收起后重新上锁
   panelFree.value = null; // 收起后下次展开重新锚定按钮
 }
 
+// 每次展开: 回到锁屏 + 按当前视口重算锚点
+watch(
+  () => store.expanded,
+  (v) => {
+    if (v) {
+      store.screen = 'lock';
+      armLock();
+      onResize();
+    }
+  },
+);
+
 onMounted(() => {
+  armLock();
   clockTimer = setInterval(() => (now.value = new Date()), 20000);
   const win = hostWindow();
   win.addEventListener('resize', onResize);
@@ -174,42 +218,68 @@ onBeforeUnmount(() => {
 <template>
   <Transition enter-active-class="kp-phone-anim-in" leave-active-class="kp-phone-anim-out">
     <div v-if="store.expanded" class="kp-phone" :style="panelStyle">
-      <!-- 顶部状态栏 (可按住拖动手机窗口) -->
-      <div class="kp-statusbar" title="按住拖动 · Esc 收起" @pointerdown="onStatusbarDown">
-        <span class="kp-sb-time">{{ displayTime }}</span>
-        <KpIcon v-if="store.mvu?.location" i="map-pin" class="kp-sb-loc" :title="store.mvu.location" />
-        <span class="kp-sb-spacer"></span>
-        <span class="kp-sb-right">
-          <KpIcon :i="store.pipeline.running ? 'refresh' : 'wifi'" :class="{ 'kp-sb-spinning': store.pipeline.running }" />
-          <span class="kp-sb-dot" :class="{ 'kp-offline': !tavernAvailable() }"></span>
-          <button class="kp-minbtn" title="收起 (Esc)" @click="minimize">
-            <KpIcon i="minus" />
-          </button>
-        </span>
-      </div>
+      <div class="kp-screen" :class="wallPresetClass">
+        <!-- 壁纸层 (图床 URL 或内置渐变) -->
+        <div class="kp-wallpaper" :style="wallStyle"></div>
 
-      <!-- 内容区 -->
-      <div class="kp-content">
-        <div v-for="tab in tabs" :key="tab" v-show="store.activeTab === tab" class="kp-view">
-          <component :is="VIEWS[tab].comp" />
+        <!-- 前摄挖孔 (装饰) -->
+        <div class="kp-cam" title="按住状态栏拖动 · Esc 收起"></div>
+
+        <!-- 状态栏 (可按住拖动手机窗口) -->
+        <div class="kp-statusbar" @pointerdown="onStatusbarDown">
+          <span class="kp-sb-time">{{ clockText }}</span>
+          <span class="kp-sb-spacer"></span>
+          <span class="kp-sb-right">
+            <KpIcon i="signal" :size="13" />
+            <KpIcon :i="store.pipeline.running ? 'refresh' : 'wifi'" :size="13" :class="{ 'kp-sb-spinning': store.pipeline.running }" />
+            <KpIcon i="battery" :size="15" />
+            <span class="kp-sb-dot" :class="{ 'kp-offline': !tavernAvailable() }"></span>
+            <button class="kp-minbtn" title="收起 (Esc)" @click="minimize">
+              <KpIcon i="minus" :size="13" />
+            </button>
+          </span>
         </div>
-      </div>
 
-      <!-- 底部导航 -->
-      <div class="kp-tabbar">
+        <!-- 舞台: 桌面 / 应用 / 锁屏 -->
+        <div class="kp-stage">
+          <!-- 桌面 -->
+          <Transition name="kp-scr">
+            <HomeScreen v-if="store.screen === 'home'" class="kp-fill" />
+          </Transition>
+
+          <!-- 应用 (v-show 保持各应用内部状态) -->
+          <div
+            v-for="(v, id) in VIEWS"
+            :key="id"
+            v-show="store.screen === id"
+            class="kp-fill kp-view kp-appscreen"
+          >
+            <component :is="v.comp" />
+          </div>
+
+          <!-- 锁屏 (最上层, 点按任意处解锁) -->
+          <Transition name="kp-lock">
+            <div v-if="store.screen === 'lock'" class="kp-lock" @click="unlock">
+              <div class="kp-lock-clock">{{ clockText }}</div>
+              <div class="kp-lock-date">卡塞尔学院 · NIGHT WATCHMEN</div>
+              <div class="kp-lock-hint">
+                <KpIcon i="chevron-up" :size="14" />
+                <span>点按任意处解锁</span>
+              </div>
+            </div>
+          </Transition>
+        </div>
+
+        <!-- 底部 Home 条 (锁屏时不显示) -->
         <button
-          v-for="tab in tabs"
-          :key="tab"
-          class="kp-tab"
-          :class="{ 'kp-active': store.activeTab === tab }"
-          @click="store.activeTab = tab"
+          v-show="store.screen !== 'lock'"
+          class="kp-homebar"
+          title="返回桌面"
+          @click="store.screen = 'home'"
         >
-          <KpIcon :i="VIEWS[tab].icon" />
-          <span>{{ VIEWS[tab].label }}</span>
-          <span v-if="tab === 'messages' && unreadTotal > 0" class="kp-tab-badge">{{ unreadTotal }}</span>
+          <span class="kp-homebar-pill"></span>
         </button>
       </div>
     </div>
   </Transition>
 </template>
-

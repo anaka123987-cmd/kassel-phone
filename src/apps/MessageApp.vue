@@ -6,7 +6,7 @@
  */
 import { ref, nextTick, computed } from 'vue';
 import KpIcon from '../components/KpIcon.vue';
-import { store, persistContent, showToast } from '../store.js';
+import { store, persistContent, showToast, goHome } from '../store.js';
 import { triggerSlashSafe, tavernAvailable } from '../services/tavern.js';
 import { sendPhoneReply } from '../services/injector.js';
 
@@ -114,7 +114,8 @@ async function send(text) {
   <!-- 会话列表 -->
   <template v-else>
     <div class="kp-app-header">
-      <div>
+      <button class="kp-iconbtn" title="返回桌面" @click="goHome"><KpIcon i="arrow-left" /></button>
+      <div class="kp-head-main">
         <div class="kp-app-title">通讯<span class="kp-gold">录</span></div>
         <div class="kp-app-sub">Messages</div>
       </div>
