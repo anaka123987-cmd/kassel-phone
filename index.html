@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>卡塞尔学院手机 · 演示页</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #10141f;
+      color: #9aa3b5;
+      font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hint {
+      max-width: 460px;
+      padding: 24px;
+      line-height: 2;
+      font-size: 14px;
+    }
+    .hint h1 {
+      color: #c9a86a;
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="hint">
+    <h1>卡塞尔学院手机 · 演示模式</h1>
+    <p>当前页面没有酒馆环境, 组件自动以「演示模式」运行:</p>
+    <p>· 拖拽右下角的悬浮按钮, 拖动超过 4px 视为拖拽, 否则为点击展开<br />
+       · 展开后可在 论坛 / 私信 / 学籍 / 资讯 / 设置 之间切换<br />
+       · 设置 → API → 多 API 模式 → 立即刷新手机内容, 可体验 mock 生成流程<br />
+       · 按钮位置会持久化到 localStorage</p>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

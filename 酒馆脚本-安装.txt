@@ -1,0 +1,21 @@
+========================================
+ 卡塞尔学院手机 · 酒馆安装三步
+========================================
+
+【第一步】把本项目推送到 GitHub（见 README.md「发布到 GitHub」），得到 CDN 地址：
+
+  https://cdn.jsdelivr.net/gh/<你的用户名>/<仓库名>@main/dist/kassel-phone.js
+
+【第二步】酒馆 → 扩展 → 酒馆助手 → 脚本库 → 新建脚本
+  保存以下内容（替换 <你的用户名>/<仓库名>）：
+
+  <script src="https://cdn.jsdelivr.net/gh/<你的用户名>/<仓库名>@main/dist/kassel-phone.js"></script>
+
+【第三步】启用脚本，右下角出现金色龙徽悬浮按钮即成功。
+  点击展开手机；长按/拖拽可移动按钮位置。
+
+提示：
+  · 推送后 jsDelivr 有缓存，更新代码后建议打 tag（如 @v1.0.1）或去
+    https://www.jsdelivr.com/tools/purge 清缓存。
+  · 也可以用 GitHub Pages：
+    https://<你的用户名>.github.io/<仓库名>/dist/kassel-phone.js

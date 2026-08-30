@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>卡塞尔学院手机 · 构建产物验收页</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #10141f;
+      color: #9aa3b5;
+      font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hint { max-width: 460px; padding: 24px; line-height: 2; font-size: 14px; }
+    .hint h1 { color: #c9a86a; font-size: 18px; margin-bottom: 12px; }
+    /* 模拟楼层内容, 验证组件悬浮不受页面影响 */
+    .fake-floor { color: #556; margin-top: 20px; font-size: 12px; line-height: 1.8; }
+  </style>
+</head>
+<body>
+  <div class="hint">
+    <h1>构建产物验收页 (dist/kassel-phone.js)</h1>
+    <p>本页以 <code>&lt;script src="./dist/kassel-phone.js"&gt;</code> 方式加载,
+       与酒馆助手脚本的加载方式一致。</p>
+    <p>右下角龙徽按钮: 拖拽 / 点击展开 / 最小化 / 设置→多API→立即刷新体验 mock 流程。</p>
+    <div class="fake-floor">
+      (模拟酒馆楼层文本占位……模拟酒馆楼层文本占位……模拟酒馆楼层文本占位……<br />
+      模拟酒馆楼层文本占位……模拟酒馆楼层文本占位……模拟酒馆楼层文本占位……)
+    </div>
+  </div>
+  <script src="./dist/kassel-phone.js"></script>
+</body>
+</html>
